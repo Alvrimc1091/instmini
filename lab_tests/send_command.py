@@ -23,8 +23,8 @@ if ser.is_open:
         ser.write(comando.encode())
 
         # Leer la respuesta del dispositivo, si es necesario
-        # respuesta = ser.readline().decode()
-        # print('Respuesta del dispositivo:', respuesta)
+        respuesta = ser.readline().decode()
+        print('Respuesta del dispositivo:', respuesta)
 
         # Comprobar si se debe terminar el programa
         if comando.lower() == 'exit':
