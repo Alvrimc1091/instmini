@@ -1,7 +1,7 @@
 import serial
 
 # Configuración de la comunicación serial
-port = '/dev/ttyUSB0'  # Puerto USB al que está conectado el dispositivo
+port = '/dev/usb/hiddev0'  # Puerto USB al que está conectado el dispositivo
 baudrate = 9600  # Velocidad de transmisión en baudios
 
 # Crear objeto Serial
