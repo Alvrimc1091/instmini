@@ -3,8 +3,8 @@ import sys
 comandos_disponibles = {
     "comando1": {
         "comando": "?",
-        "funcion": "Report Status – Bits, D0 = 100 MHz lock, D1 = YIG PLL, D6 = self test,
-                    D7 = NOVO lock",
+        "funcion": """Report Status – Bits, D0 = 100 MHz lock, D1 = YIG PLL, D6 = self test,
+                    D7 = NOVO lock""",
         "comentario": "Typical return = 11000011",
     },
     "comando2": {
@@ -65,8 +65,7 @@ comandos_disponibles = {
     "comando13": {
         "comando": "T",
         "funcion": "Read internal temp.",
-        "comentario": "Returns ASCII chars, reading in Deg. C; (example: T, then read
-                        data)",
+        "comentario": "Returns ASCII chars, reading in Deg. C; (example: T, then read data)",
     },
     "comando14": {
         "comando": "V1",
@@ -121,8 +120,7 @@ comandos_disponibles = {
     "comando24": {
         "comando": "R0000",
         "funcion": "Model Number (Example = R0) Read Location 0.",
-        "comentario": "MLSP-0208CD ("W" blocked with NOVO locked.) (R/W =
-                    16 Bytes)",
+        "comentario": """MLSP-0208CD ("W" blocked with NOVO locked.) (R/W = 16 Bytes)""",
     },
     "comando25": {
         "comando": "R0001",
@@ -186,7 +184,7 @@ comandos_disponibles = {
     },
     "comando37": {
         "comando": "R0013",
-        "funcion": "Unit Health Status - "Good" or Self test failure information",
+        "funcion": """Unit Health Status - "Good" or Self test failure information""",
         "comentario": "Good or Fail V5 as example",
     },
     "comando38": {
@@ -387,8 +385,7 @@ comandos_disponibles = {
     "comando77": {
         "comando": "R0060",
         "funcion": "Power State (Power supplies on or off) On power-up will default to ON!",
-        "comentario": ""ON" or "OFF"(Low power) - Show status of "poweron" and
-                    "poweroff" commands.",
+        "comentario": """"ON" or "OFF"(Low power) - Show status of "poweron" and "poweroff" commands.""",
     },
     "comando78": {
         "comando": "200-299",
@@ -402,8 +399,7 @@ comandos_disponibles = {
     },
     "comando80": {
         "comando": "R 1000-2047",
-        "funcion": "DAC cal data, stored in 25 MHz increments, Fmin-100 to Fmax+100
-                    MHz, 8000 Nom.",
+        "funcion": "DAC cal data, stored in 25 MHz increments, Fmin-100 to Fmax+100 MHz, 8000 Nom.",
         "comentario": "Stored in 16 bit HEX numbers (ASCII format)",
     },
 
@@ -413,7 +409,7 @@ comandos_disponibles = {
 def imprimir_lista_comandos():
     print("Lista de comandos disponibles:")
     for comando, detalles in comandos_disponibles.items():
-        print(f"Comando: {comando} ({detalles['abreviatura']})")
+        print(f"Comando: {comando} ({detalles['comando']})")
         print(f"Función: {detalles['funcion']}")
         print(f"Comentario: {detalles['comentario']}")
         print()
@@ -436,4 +432,3 @@ if len(args) == 0:
 else:
     comando = args[0]
     imprimir_info_comando(comando)
-
