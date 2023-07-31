@@ -36,6 +36,9 @@ def get_status():
     vendor_id = 0x04d8  # Replace with your device's vendor ID
     product_id = 0x003f  # Replace with your device's product ID
 
+    hidapi = None
+    device = None
+
     try:
         hidapi, device = initialize_hidapi(vendor_id, product_id)
         print('Conexión establecida. Puedes enviar comandos.')
@@ -50,7 +53,8 @@ def get_status():
         print(f"Error: {e}")
 
     finally:
-        close_hidapi(hidapi, device)
+        if hidapi and device:
+            close_hidapi(hidapi, device)
         print('Programa finalizado.')
 
 if __name__ == "__main__":
