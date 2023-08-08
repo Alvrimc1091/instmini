@@ -1,9 +1,10 @@
 #include "commands.h"
 
 const CommandInfo commandTable[] = {
-    {"T", "Get temperature", 0},
-    {"?", "Get status", 0},
-    {"fxxxxx.xxxxx", "Set frequency", 1}, // Indicate that the command requires a value
+    {"T", "Get temperature", NULL},
+    {"?", "Get status", NULL},
+    {"fxxxxx.xxxxx", "Set frequency", "xxxxx.xxxxx"}, // Indicate placeholder for value
+    {"oxxx", "Other command with value", "xxx"},
     // Add more commands here
 };
 
