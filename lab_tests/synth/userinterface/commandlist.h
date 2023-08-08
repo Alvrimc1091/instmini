@@ -4,7 +4,7 @@
 typedef struct {
     const char *command;
     const char *description;
-    int requiresValue; // Indicates if the command requires a value
+    const char *valuePlaceholder; // Placeholder for value in command (if any)
 } CommandInfo;
 
 extern const CommandInfo commandTable[];
