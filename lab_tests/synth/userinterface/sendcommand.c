@@ -3,7 +3,10 @@
 #include <hidapi/hidapi.h>
 #include <string.h>
 #include <unistd.h>
+#include <ctype.h> // Include the ctype.h library for string manipulation
 #include "commands.h"
+
+#define MAX_COMMAND_LENGTH 64
 
 // Define the vendor and product IDs for your device
 #define VENDOR_ID 0x04d8   // Replace with your device's vendor ID
@@ -67,9 +70,14 @@ int main() {
 while (1) {
         // Get user input
         char input[MAX_COMMAND_LENGTH];
-        printf("Enter a valid command (or type \"exit\" to quit): ");
+        printf("Enter a valid command  (or type \"exit\" to quit): ");
         fgets(input, sizeof(input), stdin);
         input[strcspn(input, "\n")] = 0; // Remove the newline character
+
+        // Convert input to lowercase (or uppercase) for case insensitivity
+        for (int i = 0; input[i]; i++) {
+            input[i] = tolower(input[i]); // Convert to lowercase
+        }
 
         if (strcmp(input, "exit") == 0) {
             break;
@@ -77,7 +85,14 @@ while (1) {
 
         int validCommand = 0;
         for (int i = 0; i < getCommandCount(); i++) {
-            if (strcmp(input, commandTable[i].command) == 0) {
+            // Convert command to lowercase (or uppercase) for case insensitivity
+            char lowercaseCommand[MAX_COMMAND_LENGTH];
+            snprintf(lowercaseCommand, sizeof(lowercaseCommand), "%s", commandTable[i].command);
+            for (int j = 0; lowercaseCommand[j]; j++) {
+                lowercaseCommand[j] = tolower(lowercaseCommand[j]); // Convert to lowercase
+            }
+
+            if (strcmp(input, lowercaseCommand) == 0) {
                 validCommand = 1;
 
                 if (commandTable[i].valuePlaceholder) {
@@ -99,7 +114,7 @@ while (1) {
         }
 
         if (!validCommand) {
-            printf("Comando inválido. Ingresa \"help\" para obtener una lista de comandos.\n");
+            printf("Invalid commnad. Type \"help\" to obtain a list of available commands.\n");
         }
 
         if (send_command(device, command)) {
