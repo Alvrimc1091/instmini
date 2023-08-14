@@ -1,3 +1,5 @@
+// Codigo funciona pero hay que tipear dos veces el comando para ser enviado
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <hidapi/hidapi.h>

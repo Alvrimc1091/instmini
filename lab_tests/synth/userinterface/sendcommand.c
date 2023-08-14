@@ -1,10 +1,12 @@
+// Script to test the user interface
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <hidapi/hidapi.h>
 #include <string.h>
 #include <unistd.h>
 #include <ctype.h> // Include the ctype.h library for string manipulation
-#include "commands.h"
+#include "commandlist.h"
 
 #define MAX_COMMAND_LENGTH 64
 
@@ -46,6 +48,7 @@ void get_response(hid_device *device, const char *command) {
     }
 }
 
+char response[64]; // Or adjust the buffer size as needed
 int main() {
     // Initialize the HIDAPI library
     if (hid_init()) {

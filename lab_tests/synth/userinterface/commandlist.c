@@ -1,4 +1,5 @@
-#include "commands.h"
+#include "commandlist.h"
+#include <stddef.h>
 
 const CommandInfo commandTable[] = {
     {"?", "Report Status - Bits. D0 = 100MHz Lock, D1 = YIG PLL, D6 = Self Test, D7 = NOVO Lock", NULL},

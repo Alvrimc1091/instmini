@@ -1,5 +1,3 @@
-// Script to test if the device receive the command by sending it just one time 
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <hidapi/hidapi.h>
@@ -23,24 +21,14 @@ int main() {
 
     printf("Conexión establecida. Puedes enviar comandos.\n");
 
+    int calculatedFrequency = 9000; // Assume this variable holds the calculated frequency
+
+    // Construct the frequency command
     char command[64];
-    while (1) {
-        printf("Ingrese el comando ASCII (o \"exit\" para salir): ");
-        fgets(command, sizeof(command), stdin);
-        command[strcspn(command, "\n")] = 0;
+    snprintf(command, sizeof(command), "f%d", calculatedFrequency);
 
-        if (strcmp(command, "exit") == 0) {
-            break;
-        }
-
-        unsigned char command_bytes[64];
-        memset(command_bytes, 0, sizeof(command_bytes));
-        strncpy((char *)command_bytes, command, sizeof(command_bytes) - 1);
-
-        int result = hid_write(device, command_bytes, sizeof(command_bytes));
-        if (result == -1) {
-            printf("Error al enviar el comando.\n");
-        } else {
+    if (calculatedFrequency >= 4000 && calculatedFrequency <= 16000) {
+        if (hid_write(device, (unsigned char *)command, strlen(command)) != -1) {
             printf("Comando enviado correctamente: %s\n", command);
 
             usleep(100000); // Introduce a delay of 100 milliseconds
@@ -55,7 +43,11 @@ int main() {
             } else {
                 printf("No se recibió ninguna respuesta del dispositivo.\n");
             }
+        } else {
+            printf("Error al enviar el comando.\n");
         }
+    } else {
+        printf("Frecuencia no válida. Debe estar entre 4000 y 16000.\n");
     }
 
     hid_close(device);
