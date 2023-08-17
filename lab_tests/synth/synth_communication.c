@@ -1,4 +1,7 @@
 // Script to communicate with the MLSP Frequency Synthesizer 
+// RUN:
+// gcc -o synth_communication synth_communication -lhidapi-libusb
+// sudo ./synth_communication
 
 #include <stdio.h>
 #include <stdlib.h>
