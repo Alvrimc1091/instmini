@@ -24,33 +24,48 @@ hidapi.hid_set_nonblocking(device, 1)
 
 print('Conexión establecida. Puedes enviar comandos.')
 
-# Main loop
-while True:
-    # Read the command from the terminal of the Raspberry Pi
-    command = input('Ingrese el comando ASCII: ')
-
+def send_command(device, command):
     # Convert the command to bytes and send it to the device
     result = hidapi.hid_write(device, command.encode(), len(command.encode()))
     if result == -1:
         print('Error al enviar el comando.')
+        return False
     else:
         print('Comando enviado correctamente.')
+        return True
 
-        # Read response from the device (adjust the buffer size as needed)
-        buffer_size = 64
-        response = bytearray(buffer_size)
+def get_response(device, timeout=1.0):
+    # Read response from the device (adjust the buffer size as needed)
+    buffer_size = 64
+    response = ctypes.create_string_buffer(buffer_size)
+    start_time = time.time()
+
+    while time.time() - start_time < timeout:
         bytes_read = hidapi.hid_read(device, response, buffer_size)
         if bytes_read > 0:
-            print(f'Respuesta del dispositivo: {response[:bytes_read].decode()}')
-        else:
-            print('No se recibió ninguna respuesta del dispositivo.')
+            # Decode received bytes back to a string using ASCII encoding
+            return response.raw[:bytes_read].decode("ascii")
+        time.sleep(0.1)
 
-    # Check if the program should exit
-    if command.lower() == 'exit':
-        break
+    return None
 
-# Close the device
-hidapi.hid_close(device)
+def get_status():
+    while True:
+        command = input('Ingrese el comando ASCII (o "exit" para salir): ')
+        if command.lower() == 'exit':
+            break
+        
+        if send_command(device, command):
+            response = get_response(device)
+            if response is not None:
+                print(f'Respuesta del dispositivo: {response}')
+            else:
+                print('No se recibió ninguna respuesta del dispositivo.')
 
-print('Programa finalizado.')
+    # Close the device
+    hidapi.hid_close(device)
 
+    print('Programa finalizado.')
+
+# Get the status
+get_status()
