@@ -1,4 +1,4 @@
-// Script to test if the device receive the command by sending it just one time 
+// Script to communicate with the MLSP Frequency Synthesizer 
 
 #include <stdio.h>
 #include <stdlib.h>
