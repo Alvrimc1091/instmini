@@ -47,7 +47,7 @@ int main() {
             printf("Error al enviar el comando.\n");
         }
     } else {
-        printf("Frecuencia no válida. Debe estar entre 4000 y 16000.\n");
+        printf("Frecuencia no válida. Debe estar entre 4 GHz (4000 MHz) y 16 GHz (16000 MHz) .\n");
     }
 
     hid_close(device);
