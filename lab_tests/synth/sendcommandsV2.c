@@ -50,22 +50,24 @@ void decodeBits(const char *bits) {
 }
 
 // Function to create a CSV file and save temperature along with date and time
-void save_temperature_to_csv(double temperature) {
-    FILE *csv_file = fopen("temperature_log.csv", "a"); // Open the file in append mode
-
+void save_temperature_to_csv(const char *temperature) {
+    FILE *csv_file = fopen("temperature_log.csv", "a"); // Open the CSV file in append mode
     if (csv_file) {
-        time_t current_time;
+        // Get the current date and time
+        time_t now;
         struct tm *time_info;
-        char time_str[20];
-
-        time(&current_time);
-        time_info = localtime(&current_time);
-        strftime(time_str, sizeof(time_str), "%Y-%m-%d %H:%M:%S", time_info);
-
-        fprintf(csv_file, "%s,%.2f\n", time_str, temperature);
-        fclose(csv_file);
+        char timestamp[20];
+        
+        time(&now);
+        time_info = localtime(&now);
+        strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M:%S", time_info);
+        
+        // Write the temperature and timestamp to the CSV file
+        fprintf(csv_file, "%s,%s\n", timestamp, temperature);
+        
+        fclose(csv_file); // Close the CSV file
     } else {
-        printf("Error opening CSV file for writing.\n");
+        printf("Error opening the CSV file.\n");
     }
 }
 
@@ -90,8 +92,10 @@ void *temperature_monitor(void *arg) {
             char response_data[64];
             memset(response_data, 0, sizeof(response_data));
             strncpy(response_data, (char *)response, bytes_read);
-            save_temperature_to_csv(response_data);
             printf("Temperatura del dispositivo: %s\n", response_data);
+            
+            // Save the temperature to the CSV file
+            save_temperature_to_csv(response_data);
       
         } else {
             printf("No se recibió la temperatura del dispositivo.\n");
