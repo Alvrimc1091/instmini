@@ -87,8 +87,42 @@ int main() {
         unsigned char response[8];
         int bytes_read = hid_read(device, response, sizeof(response));
         if (bytes_read > 0) {
-            response[bytes_read] = '\0';
-            decodeBits((const char *)response);
+             char bits[9];
+             memcpy(bits, response, 8);
+             bits[8] = '\0';
+             decodeBits(bits);
+        }
+        usleep(30000000); // Introduce a delay of 30 seconds
+    
+
+        unsigned char command[] = "T";
+        hid_write(device, command, sizeof(command));
+
+        unsigned char response[64];
+        int bytes_read = hid_read(device, response, sizeof(response));
+        if (bytes_read > 0) {
+            char response_data[64];
+            strncpy(response_data, (char *)response, bytes_read);
+
+            float temperature;
+            sscanf(response_data, "T,%f", &temperature);
+
+            printf("Temperatura: %.2f°C\n", temperature);
+
+            if (temperature >= 1.0 && temperature <= 5.0) {
+                printf("Warning, low temperature\n");
+            } else if (temperature > 5.0 && temperature <= 15.0) {
+                printf("Device reaching low temperatures, please be careful\n");
+            } else if (temperature > 15.0 && temperature <= 50.0) {
+                printf("Unit in good health\n");
+            } else if (temperature > 50.0 && temperature <= 55.0) {
+                printf("Device reaching high temperatures, please be careful\n");
+            } else if (temperature > 55.0 && temperature <= 59.0) {
+                printf("Warning, high temperature\n");
+            } else if (temperature > 59.0 || temperature < 0.9) {
+                printf("Temperature outside safe range. Stopping program.\n");
+                keep_running = 0;
+            }
         }
 
         usleep(30000000); // Introduce a delay of 30 seconds
@@ -96,12 +130,12 @@ int main() {
 
     // Send additional commands and print their information
     const char *additional_commands[] = {
-        "?", "T", "V1", "V2", "V3", "V4", "V5", "V6", "V7", "V8", "V9", "SF", "R0010", "R0013", "R0014", "R0015"
+        "?", "T", "V1", "V2", "V3", "V4", "V5", "V6", "V7", "V8", "V9", "R0010", "R0013", "R0014", "R0015"
     };
 
     const char *command_texts[] = {
         "Status", "Temperature", "V1 Info", "V2 Info", "V3 Info", "V4 Info", "V5 Info",
-        "V6 Info", "V7 Info", "V8 Info", "V9 Info", "SF Info", "R0010 Info", "R0013 Info",
+        "V6 Info", "V7 Info", "V8 Info", "V9 Info", "R0010 Info", "R0013 Info",
         "R0014 Info", "R0015 Info"
     };
 
