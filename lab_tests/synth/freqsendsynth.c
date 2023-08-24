@@ -98,7 +98,13 @@ int main() {
     const char *additional_commands[] = {
         "?", "T", "V1", "V2", "V3", "V4", "V5", "V6", "V7", "V8", "V9", "SF", "R0010", "R0013", "R0014", "R0015"
     };
-    
+
+    const char *command_texts[] = {
+        "Status", "Temperature", "V1 Info", "V2 Info", "V3 Info", "V4 Info", "V5 Info",
+        "V6 Info", "V7 Info", "V8 Info", "V9 Info", "SF Info", "R0010 Info", "R0013 Info",
+        "R0014 Info", "R0015 Info"
+    };
+
     for (int i = 0; i < sizeof(additional_commands) / sizeof(additional_commands[0]); i++) {
         hid_write(device, additional_commands[i], strlen(additional_commands[i]));
 
@@ -106,7 +112,13 @@ int main() {
         int bytes_read = hid_read(device, response, sizeof(response));
         if (bytes_read > 0) {
             response[bytes_read] = '\0';
-            printf("%s Response: %s\n", additional_commands[i], response);
+            printf("%s Command: %s\n", command_texts[i], additional_commands[i]);
+            printf("%s Response: %s\n", command_texts[i], response);
+        }
+
+        if (i < sizeof(additional_commands) / sizeof(additional_commands[0]) - 1) {
+            printf("Waiting 5 seconds before the next command...\n");
+            sleep(5); // Introduce a delay of 5 seconds
         }
     }
 
