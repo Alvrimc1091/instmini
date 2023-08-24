@@ -1,6 +1,10 @@
-// RUN
-// gcc -o freqsendsynth freqsendsynth.c -lhidapi-hidraw
-// sudo ./freqsendsynth
+// RUN:
+// gcc -o synthesizer synthesizer.c -lhidapi-hidraw -lpthread
+// sudo ./synthesizer
+// sends the temperature with comments every 30secs
+// if the temperature gets out if the range, the program stops
+// every 77 seconds, it also checks the status bits and stops if some of them are differnt from 0
+// when exit command, the program show the final information
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -8,17 +12,14 @@
 #include <string.h>
 #include <unistd.h>
 #include <pthread.h> // Include the pthread library
-#include <signal.h>  // Include the signal library
-
+#include <signal.h>  // Include for signal handling
 
 #define VENDOR_ID 0x04d8   // Replace with your device's vendor ID
 #define PRODUCT_ID 0x003f  // Replace with your device's product ID
+#define FREQUENCY 8000  // Change this value to the desired frequency
 
-int running = 1;
 
-void sigint_handler(int sig) {
-    running = 0;
-}
+volatile int running = 1; // Flag to control the main loop
 
 void decodeBits(const char *bits) {
     if (strlen(bits) != 8) {
@@ -28,6 +29,10 @@ void decodeBits(const char *bits) {
     
     int d0 = bits[0] - '0';
     int d1 = bits[1] - '0';
+    int d2 = bits[2] - '0';
+    int d3 = bits[3] - '0';
+    int d4 = bits[4] - '0';
+    int d5 = bits[5] - '0';
     int d6 = bits[6] - '0';
     int d7 = bits[7] - '0';
     
@@ -43,7 +48,7 @@ void decodeBits(const char *bits) {
         printf("D1: YIG PLL Locked (External Ref)\n");
     }
     
-    // D2 to D5 not used
+    // D2 to D5 processing can be added here
     
     if (d6 == 0) {
         printf("D6: Self Test Failed\n");
@@ -58,14 +63,15 @@ void decodeBits(const char *bits) {
     }
 }
 
+
 void *temperature_monitor(void *arg) {
     hid_device *device = (hid_device *)arg;
 
-    while (1) {
+    while (running) {
         unsigned char temp_command[] = "T";
         int result = hid_write(device, temp_command, sizeof(temp_command));
         if (result == -1) {
-            printf("Error al enviar el comando de temperatura.\n");
+            printf("Error sending temperature command.\n");
             break;
         }
 
@@ -74,12 +80,12 @@ void *temperature_monitor(void *arg) {
         unsigned char response[64];
         int bytes_read = hid_read(device, response, sizeof(response));
         if (bytes_read > 0) {
-            char response_data[64];
-            memset(response_data, 0, sizeof(response_data));
-            strncpy(response_data, (char *)response, bytes_read);
+            char temp_response[64];
+            memset(temp_response, 0, sizeof(temp_response));
+            strncpy(temp_response, (char *)response, bytes_read);
 
-            float temperature = atof(response_data);
-            printf("\n Temperature: %.2f°C\n", temperature);
+            float temperature = atof(temp_response);
+            printf("Temperature: %.2f°C\n", temperature);
 
             if (temperature >= 1.0 && temperature <= 5.0) {
                 printf("Warning, low temperature\n");
@@ -93,10 +99,11 @@ void *temperature_monitor(void *arg) {
                 printf("Warning, high temperature\n");
             } else if (temperature >= 59.0 || temperature <= 0.9) {
                 printf("Temperature outside safe range. Stopping program.\n");
+                running = 0; // Set the running flag to stop other threads
                 pthread_exit(NULL); // Exit the thread
             }
         } else {
-            printf("No se recibió ninguna respuesta del dispositivo para verificación de temperatura.\n");
+            printf("No response received from the device for temperature command.\n");
         }
 
         sleep(30); // Sleep for 30 seconds before the next temperature check
@@ -106,15 +113,14 @@ void *temperature_monitor(void *arg) {
 }
 
 
-// Function to constantly verify the status bits
 void *status_verification(void *arg) {
     hid_device *device = (hid_device *)arg;
 
-    while (1) {
+    while (running) {
         unsigned char status_command[] = "?";
         int result = hid_write(device, status_command, sizeof(status_command));
         if (result == -1) {
-            printf("Error al enviar el comando de estado.\n");
+            printf("Error sending status command.\n");
             break;
         }
 
@@ -126,15 +132,22 @@ void *status_verification(void *arg) {
             char response_data[64];
             memset(response_data, 0, sizeof(response_data));
             strncpy(response_data, (char *)response, bytes_read);
+            printf("Response from status command: %s\n", response_data);
 
-            // Check if the first, second, seventh, and eighth bits are 1
+            if (strlen(response_data) != 8) {
+                printf("Invalid response length for status bits.\n");
+                pthread_exit(NULL);
+            }
+
+            decodeBits(response_data);
             if (response_data[0] != '1' || response_data[1] != '1' ||
                 response_data[6] != '1' || response_data[7] != '1') {
                 printf("Status bits verification failed. Stopping program.\n");
-                pthread_exit(NULL); // Exit the thread
+                running = 0; // Set the running flag to stop other threads
+                pthread_exit(NULL);
             }
         } else {
-            printf("No se recibió ninguna respuesta del dispositivo para verificación de estado.\n");
+            printf("No response received from the device for status command.\n");
         }
 
         sleep(75); // Sleep for 75 seconds before the next verification
@@ -208,32 +221,13 @@ void send_final_status(hid_device *device) {
     }
 }
 
-void *send_frequency(void *arg) {
-    hid_device *device = (hid_device *)arg;
 
-    while (running) {
-        // Generate frequency value here using an equation
-        float frequency_value = 8000;
-        
-        char freq_command[64];
-        snprintf(freq_command, sizeof(freq_command), "f%.2f", frequency_value);
-
-        int result = hid_write(device, freq_command, strlen(freq_command));
-        if (result == -1) {
-            printf("Error sending frequency command.\n");
-        } else {
-            printf("Sent frequency command: %s\n", freq_command);
-        }
-
-        usleep(1000000); // Introduce a delay of 1 second before sending the next frequency
-    }
-
-    return NULL;
+void sigint_handler(int sig) {
+    printf("\nTerminating the program...\n");
+    running = 0; // Set the running flag to stop other threads
 }
 
 int main() {
-    signal(SIGINT, sigint_handler); // Set up the signal handler for CTRL+C
-
     if (hid_init()) {
         printf("Error initializing HIDAPI library.\n");
         return 1;
@@ -245,26 +239,43 @@ int main() {
         return 1;
     }
 
-    printf("Conexión establecida. Puedes enviar comandos.\n");
+    printf("Connection established. You can send commands.\n");
 
-    pthread_t temp_thread, status_thread, freq_thread;
+    pthread_t temp_thread, status_thread;
+    running = 1; // Set the running flag to 1 initially
     pthread_create(&temp_thread, NULL, temperature_monitor, device);
     pthread_create(&status_thread, NULL, status_verification, device);
-    pthread_create(&freq_thread, NULL, send_frequency, device);
 
-    while (running) {
-        // Keep sending other commands here periodically (like status bits)
-        usleep(750000); // Introduce a delay of 0.75 seconds before sending the next command
+    // Send the frequency command
+    unsigned char freq_command[64];
+    snprintf((char *)freq_command, sizeof(freq_command), "f%d", FREQUENCY);
+    int result = hid_write(device, freq_command, sizeof(freq_command));
+    if (result != -1) {
+        printf("Frequency command sent.\n");
+    } else {
+        printf("Error sending frequency command.\n");
     }
 
+    // Set up SIGINT handler
+    struct sigaction sa;
+    sa.sa_handler = sigint_handler;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = 0;
+    sigaction(SIGINT, &sa, NULL);
+
+    // Keep the main thread running while waiting for SIGINT
+    while (running) {
+        sleep(1);
+    }
+
+    // Clean up and exit
     pthread_join(temp_thread, NULL);
     pthread_join(status_thread, NULL);
-    pthread_join(freq_thread, NULL);
 
     hid_close(device);
     hid_exit();
 
-    printf("Programa finalizado.\n");
+    printf("Program terminated.\n");
 
     return 0;
 }
