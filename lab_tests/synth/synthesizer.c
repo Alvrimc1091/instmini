@@ -75,7 +75,7 @@ void *temperature_monitor(void *arg) {
             strncpy(response_data, (char *)response, bytes_read);
 
             float temperature = atof(response_data);
-            printf("Temperature: %.2f°C\n", temperature);
+            printf("\n Temperature: %.2f°C\n", temperature);
 
             if (temperature >= 1.0 && temperature <= 5.0) {
                 printf("Warning, low temperature\n");
@@ -159,7 +159,7 @@ void send_final_status(hid_device *device) {
         {"V7", "Voltage 7 request"},
         {"V8", "Voltage 8 request"},
         {"V9", "Voltage 9 request"},
-        {"SF", "Set frequency"},
+//        {"SF", "Set frequency"},
         {"R0010", "Request R0010"},
         {"R0013", "Request R0013"},
         {"R0014", "Request R0014"},
@@ -170,7 +170,13 @@ void send_final_status(hid_device *device) {
     for (int i = 0; final_commands[i].command != NULL; i++) {
         printf("Sent command: %s (%s)\n", final_commands[i].command, final_commands[i].text);
         
-        int result = send_command(device, final_commands[i].command);
+        unsigned char command_bytes[64];
+        memset(command_bytes, 0, sizeof(command_bytes));
+        strncpy((char *)command_bytes, final_commands[i].command, sizeof(command_bytes) - 1);
+
+        int result = hid_write(device, command_bytes, sizeof(command_bytes));
+
+
         if (result != -1) {
             usleep(2000000); // Introduce a delay of 2 seconds
 
