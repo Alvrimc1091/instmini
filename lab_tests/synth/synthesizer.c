@@ -56,92 +56,149 @@ void decodeBits(const char *bits) {
 
 void *temperature_monitor(void *arg) {
     hid_device *device = (hid_device *)arg;
-    char temp_command[2] = "T";
 
     while (1) {
-        unsigned char temp_response[64];
-        int temp_bytes_read = hid_read(device, temp_response, sizeof(temp_response));
-        if (temp_bytes_read > 0) {
-            char temp_response_data[64];
-            memset(temp_response_data, 0, sizeof(temp_response_data));
-            strncpy(temp_response_data, (char *)temp_response, temp_bytes_read);
-
-            float temperature;
-            sscanf(temp_response_data, "Temperature: %f", &temperature);
-            printf("Temperature: %.2f°C\n", temperature);
-
-            if (temperature >= 1 && temperature <= 5) {
-                printf("Warning, low temperature\n");
-            } else if (temperature > 5 && temperature <= 15) {
-                printf("Device reaching low temperatures, please be careful\n");
-            } else if (temperature > 15 && temperature <= 50) {
-                printf("Unit in good health\n");
-            } else if (temperature > 50 && temperature <= 55) {
-                printf("Device reaching high temperatures, please be careful\n");
-            } else if (temperature > 55 && temperature <= 59) {
-                printf("Warning, high temperature\n");
-            } else if (temperature <= 0.9 || temperature >= 59.1) {
-                printf("Temperature outside safe range. Stopping program.\n");
-                break;
-            }
+        unsigned char temp_command[] = "T";
+        int result = hid_write(device, temp_command, sizeof(temp_command));
+        if (result == -1) {
+            printf("Error al enviar el comando de temperatura.\n");
+            break;
         }
 
-        sleep(30); // Wait for 30 seconds before reading temperature again
-        hid_write(device, temp_command, sizeof(temp_command));
+        usleep(100000); // Introduce a delay of 100 milliseconds
+
+        unsigned char response[64];
+        int bytes_read = hid_read(device, response, sizeof(response));
+        if (bytes_read > 0) {
+            char response_data[64];
+            memset(response_data, 0, sizeof(response_data));
+            strncpy(response_data, (char *)response, bytes_read);
+
+            float temperature = atof(response_data);
+            printf("Temperature: %.2f°C\n", temperature);
+
+            if (temperature >= 1.0 && temperature <= 5.0) {
+                printf("Warning, low temperature\n");
+            } else if (temperature > 5.0 && temperature <= 15.0) {
+                printf("Device reaching low temperatures, please be careful\n");
+            } else if (temperature > 15.0 && temperature <= 50.0) {
+                printf("Unit in good health\n");
+            } else if (temperature > 50.0 && temperature <= 55.0) {
+                printf("Device reaching high temperatures, please be careful\n");
+            } else if (temperature > 55.0 && temperature < 59.0) {
+                printf("Warning, high temperature\n");
+            } else if (temperature >= 59.0 || temperature <= 0.9) {
+                printf("Temperature outside safe range. Stopping program.\n");
+                pthread_exit(NULL); // Exit the thread
+            }
+        } else {
+            printf("No se recibió ninguna respuesta del dispositivo para verificación de temperatura.\n");
+        }
+
+        sleep(30); // Sleep for 30 seconds before the next temperature check
     }
 
     return NULL;
 }
+
 
 // Function to constantly verify the status bits
 void *status_verification(void *arg) {
     hid_device *device = (hid_device *)arg;
-    char status_command[2] = "?";
 
     while (1) {
-        unsigned char status_response[64];
-        int status_bytes_read = hid_read(device, status_response, sizeof(status_response));
-        if (status_bytes_read > 0) {
-            char status_response_data[64];
-            memset(status_response_data, 0, sizeof(status_response_data));
-            strncpy(status_response_data, (char *)status_response, status_bytes_read);
-
-            unsigned char status_bits = status_response_data[0];
-
-            if ((status_bits & 0xC1) != 0xC1) {
-                printf("Status bits verification failed. Stopping program.\n");
-                break;
-            }
+        unsigned char status_command[] = "?";
+        int result = hid_write(device, status_command, sizeof(status_command));
+        if (result == -1) {
+            printf("Error al enviar el comando de estado.\n");
+            break;
         }
 
-        sleep(77); // Wait for 75 seconds before verifying status again
-        hid_write(device, status_command, sizeof(status_command));
+        usleep(100000); // Introduce a delay of 100 milliseconds
+
+        unsigned char response[64];
+        int bytes_read = hid_read(device, response, sizeof(response));
+        if (bytes_read > 0) {
+            char response_data[64];
+            memset(response_data, 0, sizeof(response_data));
+            strncpy(response_data, (char *)response, bytes_read);
+
+            // Check if the first, second, seventh, and eighth bits are 1
+            if (response_data[0] != '1' || response_data[1] != '1' ||
+                response_data[6] != '1' || response_data[7] != '1') {
+                printf("Status bits verification failed. Stopping program.\n");
+                pthread_exit(NULL); // Exit the thread
+            }
+        } else {
+            printf("No se recibió ninguna respuesta del dispositivo para verificación de estado.\n");
+        }
+
+        sleep(75); // Sleep for 75 seconds before the next verification
     }
 
     return NULL;
 }
 
+
 // Function to send final status commands
 void send_final_status(hid_device *device) {
-    char final_commands[16][5] = {
-        "?", "T", "V1", "V2", "V3", "V4", "V5", "V6", "V7", "V8", "V9", "SF", "R0010", "R0013", "R0014", "R0015"
+    struct FinalCommand {
+        char *command;
+        char *text;
     };
 
-    char *command_descriptions[16] = {
-        "Status request", "Temperature request", "Voltage 1 request", "Voltage 2 request",
-        "Voltage 3 request", "Voltage 4 request", "Voltage 5 request", "Voltage 6 request",
-        "Voltage 7 request", "Voltage 8 request", "Voltage 9 request", "Set frequency",
-        "Request R0010", "Request R0013", "Request R0014", "Request R0015"
+    struct FinalCommand final_commands[] = {
+        {"?", "Status request"},
+        {"T", "Temperature request"},
+        {"V1", "Voltage 1 request"},
+        {"V2", "Voltage 2 request"},
+        {"V3", "Voltage 3 request"},
+        {"V4", "Voltage 4 request"},
+        {"V5", "Voltage 5 request"},
+        {"V6", "Voltage 6 request"},
+        {"V7", "Voltage 7 request"},
+        {"V8", "Voltage 8 request"},
+        {"V9", "Voltage 9 request"},
+        {"SF", "Set frequency"},
+        {"R0010", "Request R0010"},
+        {"R0013", "Request R0013"},
+        {"R0014", "Request R0014"},
+        {"R0015", "Request R0015"},
+        {NULL, NULL}
     };
 
-    for (int i = 0; i < 16; i++) {
-        char command[5];
-        strcpy(command, final_commands[i]);
-        hid_write(device, command, sizeof(command));
-        usleep(50000); // Sleep for 50 milliseconds between commands
-        printf("Sent command: %s (%s)\n", command, command_descriptions[i]);
+    for (int i = 0; final_commands[i].command != NULL; i++) {
+        printf("Sent command: %s (%s)\n", final_commands[i].command, final_commands[i].text);
+        
+        int result = send_command(device, final_commands[i].command);
+        if (result != -1) {
+            usleep(2000000); // Introduce a delay of 2 seconds
+
+            unsigned char response[64];
+            int bytes_read = hid_read(device, response, sizeof(response));
+            if (bytes_read > 0) {
+                char response_data[64];
+                memset(response_data, 0, sizeof(response_data));
+                strncpy(response_data, (char *)response, bytes_read);
+                printf("Response from device: %s\n", response_data);
+
+                if (final_commands[i].command[0] == '?') {
+                    decodeBits(response_data);
+                } else if (final_commands[i].command[0] == 'f' || final_commands[i].command[0] == 'F') {
+                    char freq_number[64];
+                    sscanf(response_data, "Frecuencia seteada en %s GHz", freq_number);
+                    printf("Response from device: Frecuencia seteada en %s GHz\n", freq_number);
+                }
+            } else {
+                printf("No response received from the device.\n");
+            }
+        } else {
+            printf("Error sending command.\n");
+        }
     }
 }
+
+
 
 int main() {
     if (hid_init()) {
@@ -157,7 +214,7 @@ int main() {
 
     printf("Conexión establecida. Puedes enviar comandos.\n");
 
-    pthread_t temp_thread;
+    pthread_t temp_thread, status_thread;
     pthread_create(&temp_thread, NULL, temperature_monitor, device);
     pthread_create(&status_thread, NULL, status_verification, device);
 
@@ -171,19 +228,18 @@ int main() {
             send_final_status(device);
             break;
         } else {
-
             unsigned char command_bytes[64];
             memset(command_bytes, 0, sizeof(command_bytes));
             strncpy((char *)command_bytes, command, sizeof(command_bytes) - 1);
-    
+
             int result = hid_write(device, command_bytes, sizeof(command_bytes));
             if (result == -1) {
                 printf("Error al enviar el comando.\n");
             } else {
                 printf("Comando enviado correctamente: %s\n", command);
-    
+
                 usleep(100000); // Introduce a delay of 100 milliseconds
-    
+
                 unsigned char response[64];
                 int bytes_read = hid_read(device, response, sizeof(response));
                 if (bytes_read > 0) {
@@ -191,7 +247,7 @@ int main() {
                     memset(response_data, 0, sizeof(response_data));
                     strncpy(response_data, (char *)response, bytes_read);
                     printf("Respuesta del dispositivo: %s\n", response_data);
-    
+
                     if (strcmp(command, "?") == 0) {
                         decodeBits(response_data);
                     } else if (command[0] == 'f' || command[0] == 'F') {
@@ -205,8 +261,6 @@ int main() {
             }
         }
     }
-
-    pthread_join(temp_thread, NULL);
 
     hid_close(device);
     hid_exit();
