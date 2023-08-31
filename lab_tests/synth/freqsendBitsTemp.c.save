@@ -15,75 +15,15 @@ void sigintHandler(int sig_num) {
     keepRunning = 0;
 }
 
-struct FinalCommand {
-    const char *command;
-    const char *description;
-};
-
-struct FinalCommand final_commands[] = {
-    {"?", "Status request"},
-    {"T", "Temperature request"},
-    {"V1", "Voltage 1 request"},
-    {"V2", "Voltage 2 request"},
-    {"V3", "Voltage 3 request"},
-    {"V4", "Voltage 4 request"},
-    {"V5", "Voltage 5 request"},
-    {"V6", "Voltage 6 request"},
-    {"V7", "Voltage 7 request"},
-    {"V8", "Voltage 8 request"},
-    {"V9", "Voltage 9 request"},
-    {"R0010", "Request R0010"},
-    {"R0013", "Request R0013"},
-    {"R0014", "Request R0014"},
-    {"R0015", "Request R0015"},
-    {NULL, NULL}
-};
-
-
-pthread_mutex_t responseMutex = PTHREAD_MUTEX_INITIALIZER;
-
-void *exitThreadFunc(void *arg) {
-    hid_device *device = (hid_device *)arg;
-
-    for (int i = 0; final_commands[i].command != NULL; i++) {
-        const char *command = final_commands[i].command;
-        const char *description = final_commands[i].description;
-
-        printf("Enviando comando: %s (%s)\n", command, description);
-
-        int result = hid_write(device, command, strlen(command));
-        if (result == -1) {
-            printf("Error al enviar el comando %s.\n", command);
-        } else {
-            usleep(100000); // Introduce a delay of 100 milliseconds
-
-            if (strcmp(command, "?") == 0 || strcmp(command, "T") == 0) {
-                pthread_mutex_lock(&responseMutex);
-                unsigned char response[64];
-                int bytes_read = hid_read(device, response, sizeof(response));
-                if (bytes_read > 0) {
-                    response[bytes_read] = '\0';
-                    printf("Respuesta del dispositivo: %s\n", response);
-
-                    if (strcmp(command, "?") == 0) {
-                        processStatusResponse(response); // Interpretar respuesta de bits
-                    }
-                } else {
-                    printf("No se recibió ninguna respuesta del dispositivo para el comando %s.\n", command);
-                }
-                pthread_mutex_unlock(&responseMutex);
-            } else {
-                usleep(1000000); // Introduce a delay of 1 second before sending the next command
-            }
-        }
-    }
-
-    return NULL;
-}
 
 void processStatusResponse(const char *response) {
     if (strlen(response) != 8) {
-        usleep(1000000);
+pi@raspberrypi:~/instmini/lab_tests/synth $ sudo ./freqsendBitsTemp
+Conexión establecida. Puedes enviar comandos.
+Comando de frecuencia enviado correctamente: f9000
+Respuesta del dispositivo:
+Respuesta no válida para interpretación de bits.
+Respuesta del dispositivo: 11000011
         printf("Respuesta no válida para interpretación de bits.\n");
         keepRunning = 0;
         return;
@@ -113,9 +53,9 @@ void processStatusResponse(const char *response) {
     // D2 to D5 not used
 
     if (d6 == 0) {
-        printf("D6: Self Test Failed\n");
-    } else if (d6 == 1) {
         printf("D6: Self Test Passed\n");
+    } else if (d6 == 1) {
+        printf("D6: Self Test Failed\n");
     } else {
         printf("D6: Valor no válido\n");
     }
@@ -134,21 +74,19 @@ void *statusThreadFunc(void *arg) {
     hid_device *device = (hid_device *)arg;
 
     while (keepRunning) {
-        usleep(2000000);
+        usleep(1000000);
 
         unsigned char status_command[] = "?";
         int result = hid_write(device, status_command, sizeof(status_command));
-        usleep(10000000);
         if (result == -1) {
             printf("Error al enviar el comando de estado.\n");
             break;
         }
 
-        usleep(2000000);
+        usleep(1000000); // Introduce a delay of 100 milliseconds
 
         unsigned char response[64];
         int bytes_read = hid_read(device, response, sizeof(response));
-        usleep(100000);
         if (bytes_read > 0) {
             response[bytes_read] = '\0';
             printf("Respuesta del dispositivo: %s\n", response);
@@ -171,7 +109,6 @@ void *temperatureThread(void *arg) {
         usleep(2000000);
 
         unsigned char temp_command[] = "T";
-        usleep(2000000);
         int result = hid_write(device, temp_command, sizeof(temp_command));
         if (result == -1) {
             printf("Error al enviar el comando de temperatura.\n");
@@ -181,7 +118,6 @@ void *temperatureThread(void *arg) {
         usleep(100000); // Introduce a delay of 100 milliseconds
 
         unsigned char response[64];
-        usleep(100000);
         int bytes_read = hid_read(device, response, sizeof(response));
         if (bytes_read > 0) {
             response[bytes_read] = '\0';
@@ -254,22 +190,16 @@ int main() {
     pthread_create(&tempThread, NULL, temperatureThread, (void *)device);
 
 
+
     pthread_t statusThread;
     pthread_create(&statusThread, NULL, statusThreadFunc, (void *)device);
+
 
 
     // Wait for the temperature thread to finish
     pthread_join(tempThread, NULL);
 
     pthread_join(statusThread, NULL);
-
-
-    // Create a thread to handle exit tasks
-    pthread_t exitThread;
-    pthread_create(&exitThread, NULL, exitThreadFunc, (void *)device);
-
-    // Wait for the exit thread to finish
-    pthread_join(exitThread, NULL); 
 
     hid_close(device);
     hid_exit();
