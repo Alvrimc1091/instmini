@@ -8,7 +8,10 @@
 #define VENDOR_ID 0x04d8   // Replace with your device's vendor ID
 #define PRODUCT_ID 0x003f  // Replace with your device's product ID
 
+int keepRunning = 1;
+
 void decodeBits(const char *bits) {
+    usleep(1000000);
     if (strlen(bits) != 8) {
         printf("Input must be an 8-bit binary sequence\n");
         return;
@@ -82,7 +85,7 @@ void *temperature_monitor(void *arg) {
                     printf("Device reaching high temperatures, please be careful\n");
                 } else if (temperature > 55.0 && temperature < 59.0) {
                     printf("Warning, high temperature\n");
-		    pthread-exit(NULL);
+		    pthread_exit(NULL);
                 }
             }
         } else {
@@ -113,21 +116,15 @@ void *status_verification(void *arg) {
         unsigned char response[64];
         int bytes_read = hid_read(device, response, sizeof(response));
         if (bytes_read > 0) {
-            char response_data[64];
-            memset(response_data, 0, sizeof(response_data));
-            strncpy(response_data, (char *)response, bytes_read);
+            response[bytes_read] = '\0';
 
-            // Check if the first, second, seventh, and eighth bits are 1
-            if (response_data[0] != '1' || response_data[1] != '1' ||
-                response_data[6] != '1' || response_data[7] != '1') {
-                printf("Status bits verification failed. Stopping program.\n");
-                pthread_exit(NULL); // Exit the thread
-            }
+            // Process the status response using decodeBits function
+            decodeBits((const char *)response);
         } else {
             printf("No se recibió ninguna respuesta del dispositivo para verificación de estado.\n");
         }
 
-        sleep(75); // Sleep for 75 seconds before the next verification
+        usleep(75); // Sleep for 750 milliseconds before the next verification
     }
 
     return NULL;
@@ -163,14 +160,35 @@ int main() {
         printf("Frecuencia no válida. Debe estar entre 4 GHz (4000 MHz) y 16 GHz (16000 MHz).\n");
     }
 
+    // Introduce a delay after setting the frequency
+    usleep(1000000);
+
+    // Request the status for the first time
+    usleep(100000); // Introduce a delay before requesting status
+    unsigned char status_command[] = "?";
+    int result = hid_write(device, status_command, sizeof(status_command));
+    if (result == -1) {
+        printf("Error al enviar el comando de estado.\n");
+    }
+
+    // Introduce a delay before starting the threads
     usleep(1000000);
 
     pthread_t temp_thread, status_thread;
-    pthread_create(&temp_thread, NULL, temperature_monitor, device);
+    int temp_thread_create = pthread_create(&temp_thread, NULL, temperature_monitor, device);
+    int status_thread_create = pthread_create(&status_thread, NULL, status_verification, device);
 
-    usleep(1000000);
+    if (temp_thread_create || status_thread_create) {
+        printf("Error al crear hilos.\n");
+        return 1;
+    }
 
-    pthread_create(&status_thread, NULL, status_verification, device);
+    // Wait for threads to finish
+    pthread_join(temp_thread, NULL);
+    pthread_join(status_thread, NULL);
+
+    keepRunning = 0; // Stop the temperature_monitor thread
+    usleep(100000); // Introduce a small delay
 
     hid_close(device);
     hid_exit();
@@ -179,7 +197,3 @@ int main() {
 
     return 0;
 }
-
-
-
-

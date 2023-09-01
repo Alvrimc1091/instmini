@@ -69,7 +69,7 @@ void *statusThreadFunc(void *arg) {
     hid_device *device = (hid_device *)arg;
 
     while (keepRunning) {
-        usleep(2000000);
+        usleep(1000000);
 
         unsigned char status_command[] = "?";
         int result = hid_write(device, status_command, sizeof(status_command));
@@ -82,12 +82,13 @@ void *statusThreadFunc(void *arg) {
         usleep(2000000);
 
         unsigned char response[64];
+        usleep(1000000);
         int bytes_read = hid_read(device, response, sizeof(response));
-        usleep(100000);
         if (bytes_read > 0) {
             response[bytes_read] = '\0';
             printf("Respuesta del dispositivo: %s\n", response);
             processStatusResponse((const char *)response);
+            usleep(1000000);
         } else {
             printf("No se recibió ninguna respuesta del dispositivo para el comando de estado.\n");
         }
