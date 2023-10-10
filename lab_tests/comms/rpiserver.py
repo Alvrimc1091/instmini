@@ -206,62 +206,121 @@
 # nuevos_clientes_thread.start()
 
 
+# import socket
+# import threading
+# from ads1115 import get_power, print_values, plot_power, save_data_csv  # Asegúrate de tener ads1115.py en el mismo directorio
+
+# # Definir una función para manejar comandos desde la terminal
+# def manejar_comandos():
+#     while True:
+#         command = input("Ingrese un comando (f para get_power, p para plot_power, s para save_data_csv): ")
+        
+#         if command == "f":
+#             freq = float(input("Ingrese la frecuencia: "))
+#             frecuencia, voltaje, potencia = get_power(freq)
+#             print(f"Frecuencia: {frecuencia} [GHz]")
+#             print(f"Voltaje: {voltaje} [V]")
+#             print(f"Potencia: {potencia} [dBm]")
+        
+#         elif command == "v":
+#             ultimo_potencia, ultimo_voltaje = print_values()
+#             print(f"Último valor de Voltaje: {ultimo_voltaje} V")
+#             print(f"Último valor de Potencia: {ultimo_potencia} dBm")
+
+#         elif command == "p":
+#             freq = float(input("Ingrese la frecuencia: "))
+#             tiempo = []  # Debes proporcionar los datos correctos para tiempo, valores_analogicos y potenciasdBm
+#             valores_analogicos = []
+#             potenciasdBm = []
+#             plot_power(freq, tiempo, valores_analogicos, potenciasdBm)
+#             save_data_csv()
+#             print("Gráficos generados y guardados.")
+        
+#         elif command == "s":
+#             save_data_csv()
+#             print("Datos guardados en archivos CSV.")
+        
+#         else:
+#             print("Comando no válido. Use 'f' para get_power, 'p' para plot_power o 's' para save_data_csv.")
+
+# # Definir una función para manejar clientes
+# def manejar_cliente(client_socket):
+#     data = client_socket.recv(1024) # Frecuencia recibida desde el cliente (PIC)
+
+#     if data:
+#         freq = float(data.decode())
+#         print(f"Frecuencia recibida del cliente: {freq}") # Frecuencia recibida desde el cliente (PIC)
+        
+#         # Llamar a la función get_power(freq) y obtener los parámetros de freq, volt y pot
+#         frecuencia, voltaje, potencia = get_power(freq)
+
+#         print(f'Frecuencia: {frecuencia} [GHz]')
+#         print(f'Voltaje: {voltaje} [V]')
+#         print(f'Potencia: {potencia} [dBm]')
+
+#         # Enviar resultados al cliente
+#         resultado = f"Frecuencia: {frecuencia}, Voltaje: {voltaje}, Potencia: {potencia}"
+#         client_socket.send(resultado.encode())
+        
+#     client_socket.close()
+
+# def iniciar_servidor(host, port):
+#     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+#     server.bind((host, port))
+#     server.listen(5)
+#     print(f"Servidor escuchando en {host}:{port}")
+    
+#     while True:
+#         client_sock, addr = server.accept()
+#         print(f"Conexión entrante de {addr[0]}:{addr[1]}")
+#         client_thread = threading.Thread(target=manejar_cliente, args=(client_sock,))
+#         client_thread.start()
+
+# if __name__ == "__main__":
+#     host = '169.254.81.30'
+#     port = 8000
+    
+#     # Crear un hilo para manejar comandos
+#     comando_thread = threading.Thread(target=manejar_comandos)
+#     comando_thread.daemon = True  # El hilo de comandos se ejecuta en segundo plano
+#     comando_thread.start()
+    
+#     iniciar_servidor(host, port)
+
+
 import socket
 import threading
-from ads1115 import get_power, print_values, plot_power, save_data_csv  # Asegúrate de tener ads1115.py en el mismo directorio
+from ads1115 import volt_power_print, volt_power_show, volt_power_lecture
+from synth import open_device, close_device, send_freq, send_temp, send_status
 
-# Definir una función para manejar comandos desde la terminal
-def manejar_comandos():
-    while True:
-        command = input("Ingrese un comando (f para get_power, p para plot_power, s para save_data_csv): ")
-        
-        if command == "f":
-            freq = float(input("Ingrese la frecuencia: "))
-            frecuencia, voltaje, potencia = get_power(freq)
-            print(f"Frecuencia: {frecuencia} [GHz]")
-            print(f"Voltaje: {voltaje} [V]")
-            print(f"Potencia: {potencia} [dBm]")
-        
-        elif command == "v":
-            ultimo_potencia, ultimo_voltaje = print_values()
-            print(f"Último valor de Voltaje: {ultimo_voltaje} V")
-            print(f"Último valor de Potencia: {ultimo_potencia} dBm")
+# Variable global para almacenar el valor de la frecuencia
+frecuencia = 0
 
-        elif command == "p":
-            freq = float(input("Ingrese la frecuencia: "))
-            tiempo = []  # Debes proporcionar los datos correctos para tiempo, valores_analogicos y potenciasdBm
-            valores_analogicos = []
-            potenciasdBm = []
-            plot_power(freq, tiempo, valores_analogicos, potenciasdBm)
-            save_data_csv()
-            print("Gráficos generados y guardados.")
-        
-        elif command == "s":
-            save_data_csv()
-            print("Datos guardados en archivos CSV.")
-        
-        else:
-            print("Comando no válido. Use 'f' para get_power, 'p' para plot_power o 's' para save_data_csv.")
-
-# Definir una función para manejar clientes
+# Función para manejar la conexión del cliente
 def manejar_cliente(client_socket):
-    data = client_socket.recv(1024) # Frecuencia recibida desde el cliente (PIC)
-
+    global frecuencia
+    
+    data = client_socket.recv(1024)
     if data:
-        freq = float(data.decode())
-        print(f"Frecuencia recibida del cliente: {freq}") # Frecuencia recibida desde el cliente (PIC)
-        
-        # Llamar a la función get_power(freq) y obtener los parámetros de freq, volt y pot
-        frecuencia, voltaje, potencia = get_power(freq)
-
-        print(f'Frecuencia: {frecuencia} [GHz]')
-        print(f'Voltaje: {voltaje} [V]')
-        print(f'Potencia: {potencia} [dBm]')
-
-        # Enviar resultados al cliente
-        resultado = f"Frecuencia: {frecuencia}, Voltaje: {voltaje}, Potencia: {potencia}"
+        frecuencia = float(data.decode())
+        print(f"Frecuencia recibida: {frecuencia}")
+        resultado = f"Frecuencia: {frecuencia}"
         client_socket.send(resultado.encode())
         
+        # Llamar a la función open_device para abrir el dispositivo USB
+        device = open_device()
+        
+        if device:
+            # Llamar a la función send_freq para configurar la frecuencia en el dispositivo USB
+            response = send_freq(device, frecuencia)
+            if response:
+                # Llamar a la función send_temp para obtener la temperatura del dispositivo
+                send_temp(device)
+                # Llamar a la función send_status para obtener el estado del dispositivo
+                send_status(device)
+            # Llamar a la función close_device para cerrar el dispositivo USB
+            close_device(device)
+         
     client_socket.close()
 
 def iniciar_servidor(host, port):
@@ -271,18 +330,44 @@ def iniciar_servidor(host, port):
     print(f"Servidor escuchando en {host}:{port}")
     
     while True:
-        client_sock, addr = server.accept()
-        print(f"Conexión entrante de {addr[0]}:{addr[1]}")
-        client_thread = threading.Thread(target=manejar_cliente, args=(client_sock,))
-        client_thread.start()
+        try:
+            client_sock, addr = server.accept()
+            print(f"Conexión entrante de {addr[0]}:{addr[1]}")
+            client_thread = threading.Thread(target=manejar_cliente, args=(client_sock,))
+            client_thread.start()
+        except KeyboardInterrupt:
+            break  # Salir del bucle si se presiona Ctrl+C
 
 if __name__ == "__main__":
-    host = '169.254.81.30'
+    host = '169.254.81.30'  # Cambia esto a tu dirección IP
     port = 8000
     
-    # Crear un hilo para manejar comandos
-    comando_thread = threading.Thread(target=manejar_comandos)
-    comando_thread.daemon = True  # El hilo de comandos se ejecuta en segundo plano
-    comando_thread.start()
+    server_thread = threading.Thread(target=iniciar_servidor, args=(host, port))
+    server_thread.daemon = True
+    server_thread.start()
     
-    iniciar_servidor(host, port)
+    while True:
+        command = input("Ingrese un comando ('F' para mostrar voltaje y potencia, 'Q' para salir): ")
+
+        if command == 'F':
+            volt_power_print(frecuencia)
+
+        elif command == "P":
+            volt_power_lecture(frecuencia)
+            volt_power_show()
+
+        elif command == 'T':
+            # Ejecutar la función para enviar el comando de temperatura
+            device = open_device()
+            send_temp(device)  # Asegúrate de que "device" esté definido
+            close_device(device)
+
+        elif command == 'S':
+            # Ejecutar la función para enviar el comando de estado
+            device = open_device()
+            send_status(device)  # Asegúrate de que "device" esté definido
+            close_device(device)
+
+        elif command == 'Q':
+            print("Programa Finalizado")
+            break  # Salir del bucle principal y cerrar el servidor
