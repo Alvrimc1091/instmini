@@ -38,35 +38,7 @@
 # plt.grid(True)
 # plt.show()
 
-import numpy as np
-import matplotlib.pyplot as plt
 
-# Datos proporcionados
-x_data = np.array([40, 42.5, 45, 50, 55, 57.5, 60])
-y_data = np.array([1993, 1950, 1902, 2256, 2076, 1965, 1876])
-
-# Interpolación polinómica de cuarto grado
-coefficients = np.polyfit(x_data, y_data, 4)
-polynomial = np.poly1d(coefficients)
-
-# Valores de x para la curva ajustada
-x_range = np.linspace(40, 60, 400)
-y_range = polynomial(x_range)
-
-# Graficar los datos originales
-plt.scatter(x_data, y_data, label='Datos Originales')
-
-# Graficar la curva ajustada
-plt.plot(x_range, y_range, 'r', label='Interpolación Polinómica (4to grado)')
-
-plt.xlabel('f')
-plt.ylabel('p')
-plt.legend()
-plt.grid()
-plt.show()
-
-# Coeficientes del ajuste
-print(f'Coeficientes del ajuste (polinomio de cuarto grado): {coefficients}')
 
 
 plt.savefig('sensitiviy_function.png')
