@@ -78,17 +78,17 @@ def send_status(device):
     response_status = device.read(64)
     if response_status:
         response_str = "".join(map(chr, response_status))
+        response_str = response_str[:8]  # Tomar solo los primeros 8 caracteres
         print(f"Respuesta del dispositivo (estado crudo): {response_str}")
 
-        if len(response_str) == 8:
-            d0 = int(response_str[0])
-            d1 = int(response_str[1])
-            d6 = int(response_str[6])
-            d7 = int(response_str[7])
+        # Procesar cada bit en la respuesta
+        bits = [int(bit) for bit in response_str]
 
+        if len(bits) == 8:
+            d0, d1, d2, d3, d4, d5, d6, d7 = bits
             print(f"D0: {'100 MHz Locked (Internal Ref)' if d0 == 1 else '100 MHz Unlocked (Internal Ref)'}")
             print(f"D1: {'YIG PLL Locked (External Ref)' if d1 == 1 else 'YIG PLL Unlocked (External Ref)'}")
-            # D2 to D5 no se utilizan
+            # D2 a D5 no se utilizan
             print(f"D6: {'Self Test Passed' if d6 == 1 else 'Self Test Failed'}")
             print(f"D7: {'NOVO Locked' if d7 == 1 else 'NOVO Unlocked'}")
         else:

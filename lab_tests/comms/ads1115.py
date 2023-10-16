@@ -538,9 +538,9 @@ def volt_power_print(frecuencia):
 
     valor_analogico, potenciadBm = volt_to_power(frecuencia)
     
-    print(f"Frecuencia: {frecuencia} GHz")
-    print(f"Voltaje: {valor_analogico:.4f} V")  # Formatear el voltaje a dos decimales
-    print(f"Potencia: {potenciadBm:.4f} dBm")  # Formatear la potencia a dos decimales
+    print(f"Frecuencia: {frecuencia} [GHz]")
+    print(f"Voltaje UD: {valor_analogico:.4f} [V]")  # Formatear el voltaje a 4 decimales
+    print(f"Potencia: {potenciadBm:.4f} [dBm]")  # Formatear la potencia a 4 decimales
 
 
 # Función para realizar lecturas durante 10 segundos de voltaje y potencia
