@@ -11,5 +11,5 @@ def enviar_frecuencia(host, port, freq):
 if __name__ == "__main__":
     host = '169.254.81.30'
     port = 8000
-    freq = 22 # Aquí puedes configurar la frecuencia que deseas enviar
+    freq = 22 # Cambiar para enviar distintas frecuencias
     enviar_frecuencia(host, port, freq)
