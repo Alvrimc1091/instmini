@@ -1,5 +1,6 @@
 import socket
 import threading
+import RPi.GPIO as GPIO
 import time
 from ads1115 import volt_power_print, volt_power_show, volt_power_lecture
 from synth import open_device, close_device, send_freq, send_temp, send_status
@@ -8,6 +9,12 @@ from synth import open_device, close_device, send_freq, send_temp, send_status
 frecuencia = 0
 freq_medidor = 0 
 freq_synth = 0
+
+# Configura el pin GPIO
+relay_pin = 17  # pin GPIO
+
+# GPIO.setmode(GPIO.BCM)
+# GPIO.setup(relay_pin, GPIO.OUT)
 
 # Función para manejar la conexión del cliente
 def manejar_cliente(client_socket):
@@ -25,7 +32,7 @@ def manejar_cliente(client_socket):
         print(f"Frecuencia Sintetizador: {freq_synth} [MHz]")
         print(f"Frecuencia Medidor de Potencia: {freq_medidor} [GHz]")
 
-        resultado = f"Frecuencia: {freq_synth}, "
+        resultado = f"Frecuencia: {freq_synth} "
         client_socket.send(resultado.encode())
         
         # Llamar a la función open_device para abrir el sintetizador
@@ -45,57 +52,147 @@ def manejar_cliente(client_socket):
     client_socket.close()
 
 def manejar_comandos():
+    
+        while True:
+      
+            command = input("Ingrese un comando: ")
 
-    while True:
-        command = input("Ingrese un comando: ")
+            # Imprime el valor de Frecuencia (X4), Voltaje leído por el UD y la Potencia
+            if command == 'V':
+                print(" ------ Información Sintetizador ------ ")
+                print(f"Frecuencia Sintetizador: {freq_synth}")
+                print(" --------------------------------------- ")
+                print("--- Información UD Broadband Detector ---")
+                volt_power_print(freq_medidor) 
+                print(" --------------------------------------- ")
+            
+            # Muestra la lista de comandos disponibles
+            elif command == 'C':
+                print("'V' -> Muestra valores de Voltaje [V] y Potencia [dB]\
+                    \n'P' -> Guarda los datos de V y P en un CSV además de graficarlos\
+                    \n'T' -> Muestra la Temperatura actual del Sintetizador\
+                    \n'S' -> Muestra los Bits de estado del Sintetizador\
+                    \n'Q' -> Cerrar el Servidor")
 
-        # Imprime el valor de Frecuencia (X4), Voltaje leído por el UD y la Potencia
-        if command == 'V':
-            print(" ------ Información Sintetizador ------ ")
-            print(f"Frecuencia Sintetizador: {freq_synth}")
-            print(" --------------------------------------- ")
-            print("--- Información UD Broadband Detector ---")
-            volt_power_print(freq_medidor) 
-            print(" --------------------------------------- ")
-        
-        # Muestra la lista de comandos disponibles
-        elif command == 'C':
-            print("'V' -> Muestra valores de Voltaje [V] y Potencia [dB]\
-                  \n'P' -> Guarda los datos de V y P en un CSV además de graficarlos\
-                  \n'T' -> Muestra la Temperatura actual del Sintetizador\
-                  \n'S' -> Muestra los Bits de estado del Sintetizador\
-                  \n'Q' -> Cerrar el Servidor")
+            # Guarda los datos (recopila los últimos 10 seg.) de Voltaje y Potencia en un CSV 
+            # Genera dos gráficos: Tiempo vs Volt y Volt vs Pot
+            elif command == "P":
+                volt_power_lecture(frecuencia)
+                volt_power_show()
 
-        # Guarda los datos (recopila los últimos 10 seg.) de Voltaje y Potencia en un CSV 
-        # Genera dos gráficos: Tiempo vs Volt y Volt vs Pot
-        elif command == "P":
-            volt_power_lecture(frecuencia)
-            volt_power_show()
+            # Comunicación con el sintetizador. Muestra la temperatura actual del sintetizador
+            elif command == 'T':
+                device = open_device()
+                if device:
+                    try:
+                # Ejecutar la función para enviar el comando de temperatura
+                
+                        send_temp(device)  
+                        close_device(device)
+                    except Exception as e:
+                        print(f"Error al obtener la temperatura: {e}")
+                else:
+                    print("El dispositivo no está conectado. Comando no disponible.")
 
-        # Comunicación con el sintetizador. Muestra la temperatura actual del sintetizador
-        elif command == 'T':
-            # Ejecutar la función para enviar el comando de temperatura
-            device = open_device()
-            send_temp(device)  
-            close_device(device)
 
-        # Comunicación con el sintetizador. Muestra los bits de estado del sintetizador
-        # Bits de estado: B0 | B1 | B2 | B3 | B4 | B5 | B6 | B7 
-        # B0 = 1 (0) -> 10 MHz (Un)Locked (Internal Ref)
-        # B1 = 1 (0) -> YIG PLL (Un)Locked (External Ref)
-        # B2 a B5 no son utilizados
-        # B6 = 1 (0) -> Self Test Passed (Failed)
-        # B7 = 1 (0) -> NOVO (Un)Locked
-        elif command == 'S':
-            # Ejecutar la función para enviar el comando de estado
-            device = open_device()
-            send_status(device)  
-            close_device(device)
+            # Comunicación con el sintetizador. Muestra los bits de estado del sintetizador
+            # Bits de estado: B0 | B1 | B2 | B3 | B4 | B5 | B6 | B7 
+            # B0 = 1 (0) -> 10 MHz (Un)Locked (Internal Ref)
+            # B1 = 1 (0) -> YIG PLL (Un)Locked (External Ref)
+            # B2 a B5 no son utilizados
+            # B6 = 1 (0) -> Self Test Passed (Failed)
+            # B7 = 1 (0) -> NOVO (Un)Locked
+            elif command == 'S':
+                # Ejecutar la función para enviar el comando de estado
+                device = open_device()
+                if device:
+                    try:
 
-        # Cierra el servidor y la recepción de comandos
-        elif command == 'Q':
-            print("Programa Finalizado")
-            break  # Salir del bucle principal y cerrar el servidor    
+                        send_status(device)  
+                        close_device(device)
+                    except Exception as e:
+                        print(f"Error al obtener los bits de estado: {e}")
+                else:
+                    print("El dispositivo no está conectado. Comando no disponible.")
+
+            # Cierra el servidor y la recepción de comandos
+            elif command == 'Q':
+                print("Programa Finalizado")
+
+                break  # Salir del bucle principal y cerrar el servidor 
+
+
+# def manejar_comandos():
+    
+#     device = open_device()
+
+#     if device:
+#         try:
+#             while True:
+#                 command = input("Ingrese un comando: ")
+
+#                 # Imprime el valor de Frecuencia (X4), Voltaje leído por el UD y la Potencia
+#                 if command == 'V':
+#                     print(" ------ Información Sintetizador ------ ")
+#                     print(f"Frecuencia Sintetizador: {freq_synth}")
+#                     print(" --------------------------------------- ")
+#                     print("--- Información UD Broadband Detector ---")
+#                     volt_power_print(freq_medidor) 
+#                     print(" --------------------------------------- ")
+                
+#                 # Muestra la lista de comandos disponibles
+#                 elif command == 'C':
+#                     print("'V' -> Muestra valores de Voltaje [V] y Potencia [dB]\
+#                         \n'P' -> Guarda los datos de V y P en un CSV además de graficarlos\
+#                         \n'T' -> Muestra la Temperatura actual del Sintetizador\
+#                         \n'S' -> Muestra los Bits de estado del Sintetizador\
+#                         \n'Q' -> Cerrar el Servidor")
+
+#                 # Guarda los datos (recopila los últimos 10 seg.) de Voltaje y Potencia en un CSV 
+#                 # Genera dos gráficos: Tiempo vs Volt y Volt vs Pot
+#                 elif command == "P":
+#                     volt_power_lecture(frecuencia)
+#                     volt_power_show()
+
+#                 # Comunicación con el sintetizador. Muestra la temperatura actual del sintetizador
+#                 elif command == 'T':
+#                     try:
+#                     # Ejecutar la función para enviar el comando de temperatura
+#                     #device = open_device()
+#                         send_temp(device)  
+#                     except Exception as e:
+#                         print(f"Error al obtener la temperatura: {e}")
+
+#                     #close_device(device)
+
+#                 # Comunicación con el sintetizador. Muestra los bits de estado del sintetizador
+#                 # Bits de estado: B0 | B1 | B2 | B3 | B4 | B5 | B6 | B7 
+#                 # B0 = 1 (0) -> 10 MHz (Un)Locked (Internal Ref)
+#                 # B1 = 1 (0) -> YIG PLL (Un)Locked (External Ref)
+#                 # B2 a B5 no son utilizados
+#                 # B6 = 1 (0) -> Self Test Passed (Failed)
+#                 # B7 = 1 (0) -> NOVO (Un)Locked
+#                 elif command == 'S':
+#                     # Ejecutar la función para enviar el comando de estado
+#                     #device = open_device()
+#                     try:
+#                         send_status(device)  
+#                     #close_device(device)
+#                     except Exception as e:
+#                         print(f"Error al obtener los bits de estado: {e}")
+              
+#                 # Cierra el servidor y la recepción de comandos
+#                 elif command == 'Q':
+#                     print("Programa Finalizado")
+
+#                     break  # Salir del bucle principal y cerrar el servidor 
+#         except KeyboardInterrupt:
+#             pass
+#         finally:
+#             close_device(device)
+#     else:
+#         print("Error al abrir el dispositivo. Comandos que requieren el dispositivo no están disponibles.")
+
 
 # Función para inicializar el servidor y escuchar datos de frecuencia
 def iniciar_servidor(host, port):
@@ -117,13 +214,17 @@ def iniciar_servidor(host, port):
 # También muestra la temperatura y bits de estado del sintetizador
 def data_periodica(device):
     while True:
-        # Envía los comandos V, T y S
-        volt_power_print(frecuencia)
+        if device:
+
+            # Envía los comandos V, T y S
+            volt_power_print(frecuencia)
         
-        device = open_device()
-        send_temp(device)
-        send_status(device)
-        close_device(device)
+            try:
+        
+                send_temp(device)
+                send_status(device)
+            except Exception as e:
+                print(f"Error al comunicarse con el dispositivo: {e}")
         
         # Enviar la siguiente información en X seg
         time.sleep(5)
