@@ -13,9 +13,6 @@ freq_synth = 0
 # Configura el pin GPIO
 relay_pin = 17  # pin GPIO
 
-# GPIO.setmode(GPIO.BCM)
-# GPIO.setup(relay_pin, GPIO.OUT)
-
 # Función para manejar la conexión del cliente
 def manejar_cliente(client_socket):
     global frecuencia, freq_medidor, freq_synth
@@ -213,19 +210,19 @@ def iniciar_servidor(host, port):
 # Función para enviar constantemente los comandos de V, para mostrar freq, volt y pot
 # También muestra la temperatura y bits de estado del sintetizador
 def data_periodica(device):
+    device = open_device()
     while True:
+        # Envía los comandos V, T y S
+        volt_power_print(frecuencia)
         if device:
 
-            # Envía los comandos V, T y S
-            volt_power_print(frecuencia)
-        
             try:
-        
                 send_temp(device)
                 send_status(device)
             except Exception as e:
-                print(f"Error al comunicarse con el dispositivo: {e}")
-        
+                print(f"Error al comunicarse con el dispositivo: {e}. Por favor verifique la conexión.")
+        else:
+            print(f"Error al comunicarse con el dispositivo. Por favor verifique la conexión.")
         # Enviar la siguiente información en X seg
         time.sleep(5)
 
