@@ -109,10 +109,12 @@ def send_temp(device):
 # Define el pin del LED
 led_pin = 17
 
-# Por el funcionamiento del código, el warning que siempre muestra es:
-# RuntimeWarning: This channel is already in use, continuing anyway.  Use GPIO.setwarnings(False) to disable warnings.
+# Configura el modo de pines GPIO
+GPIO.setmode(GPIO.BCM)
 
-GPIO.setwarnings(False)
+# Configura el pin GPIO como salida
+GPIO.setup(led_pin, GPIO.OUT)
+
 
 def send_status(device):
     status_command = "?" # Comandos para conocer los bits de estado del sintetizador
@@ -130,8 +132,8 @@ def send_status(device):
         bits = [int(bit) for bit in response_str]
 
         # Inicializa GPIO una vez
-        GPIO.setmode(GPIO.BCM)
-        GPIO.setup(led_pin, GPIO.OUT)
+        #GPIO.setmode(GPIO.BCM)
+        #GPIO.setup(led_pin, GPIO.OUT)
 
         # Imprime mensajes en función de los bits de estado
         if len(bits) == 8:
@@ -150,25 +152,25 @@ def send_status(device):
             print(f"B7: {'NOVO Locked' if B7 == 1 else 'NOVO Unlocked'}")
 
             if response_str == '11000011':
-                GPIO.output(led_pin, GPIO.HIGH)
+                #GPIO.output(led_pin, GPIO.HIGH)
+                GPIO.output(led_pin, GPIO.LOW) # Enciende Relé
                 print("RELÉ LED ON => +5V")
             else:
-                GPIO.cleanup()
+                #GPIO.cleanup()
+                GPIO.output(led_pin, GPIO.HIGH) # Apagando Relé
                 print("Revise Bits de estado de Sintetizador")
                 print("RELÉ LED OFF => 0V")
 
         else:
             print("Respuesta inválida del dispositivo (estado):", response_str)
             print("RELÉ LED OFF => 0V")
-            GPIO.cleanup()
+            #GPIO.cleanup()
+            GPIO.output(led_pin, GPIO.HIGH) # Apagando Relé
     else:
         print("No se recibió respuesta del dispositivo para la solicitud de estado.")
         print("RELÉ LED OFF => 0V")
-        GPIO.cleanup()
-
-
-
-
+        #GPIO.cleanup()
+        GPIO.output(led_pin, GPIO.HIGH) # Apagando Relé
 
 
 # def send_status(device):

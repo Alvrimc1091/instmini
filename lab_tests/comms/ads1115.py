@@ -15,7 +15,7 @@ from scipy.interpolate import PchipInterpolator
 
 # Configuración del ADS1115
 i2c = board.I2C()  # Configura la comunicación I2C
-ads = ADS.ADS1115(i2c)  # Crea una instancia del objeto ADS1115
+ads = ADS.ADS1115(i2c, gain = 1)  # Crea una instancia del objeto ADS1115
 
 # Configura la entrada analógica para la lectura de voltaje
 canal = AnalogIn(ads, ADS.P0)  # Cambia ADS.P0 al número de canal que estés utilizando
@@ -41,7 +41,7 @@ def volt_to_power(freq):
     lectura_voltaje = canal.voltage
 
     # Convertir lectura a voltaje
-    valor_analogico = (lectura_voltaje * 1.001001) + 0.0005 # Pequeño ajuste de los datos
+    valor_analogico = (abs(lectura_voltaje) * 1.001001) + 0.0005 # Pequeño ajuste de los datos
     valor_analogico = (999.0 * valor_analogico + valor_analogico) / 1000.0 # Pequeño ajuste de los datos
 
     # Conversión de V -> mW
@@ -142,10 +142,8 @@ def volt_power_show():
                 archivo_csv.write(f"{horas[i]},{voltaje[i]},{potencia[i]}\n")
 
 # Ejemplo de uso
-# if __name__ == "__main__":
-#     frecuencia_ejemplo = 50.0  # Cambia la frecuencia según tu necesidad
-#     volt_power_lecture(frecuencia_ejemplo)
-#     volt_power_print(frecuencia_ejemplo)
-#     volt_power_show()  # Mostrar y guardar los datos después de la lectura
-
-
+if __name__ == "__main__":
+    frecuencia_ejemplo = 50.0  
+    volt_power_lecture(frecuencia_ejemplo)
+    volt_power_print(frecuencia_ejemplo)
+    volt_power_show()  # Mostrar y guardar los datos después de la lectura

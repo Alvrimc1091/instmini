@@ -10,11 +10,11 @@ try:
     while True:
         GPIO.output(relay_pin, GPIO.HIGH)  # Enciende el relé
         print("ON")
-        time.sleep(2)
+        time.sleep(50)
 
         GPIO.cleanup()  # Limpia los pines GPIO al finalizar    
         print("OFF")
-        time.sleep(2) 
+        time.sleep(50) 
         GPIO.setmode(GPIO.BCM)
         GPIO.setup(relay_pin, GPIO.OUT)
 
