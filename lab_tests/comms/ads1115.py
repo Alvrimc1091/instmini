@@ -138,8 +138,6 @@ def volt_power_show():
         plt.tight_layout()  # Ajustar automáticamente la disposición de los subplots
         #plt.show()
 
-
-
         # Guardar datos en archivo CSV. En este caso, para cada frecuencia se genera
         # un archivo .csv, de modo tal que se tendrán distintos archivos de respaldo
         with open(f"datos_{freq}GHz.csv", "w") as archivo_csv:
