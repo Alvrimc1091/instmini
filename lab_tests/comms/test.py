@@ -133,14 +133,14 @@ try:
         # Enciende el relé (activa la salida)
         print("Apagando Relé")
         time.sleep(1)
-        GPIO.output(pin_rele, GPIO.HIGH)
+        GPIO.output(pin_rele, GPIO.HIGH) # Apaga Relé
         print("Relé Apagado")
         time.sleep(5)  
 
         # Apaga el relé (desactiva la salida)
         print("Encendiendo Relé")
         time.sleep(1)
-        GPIO.output(pin_rele, GPIO.LOW)
+        GPIO.output(pin_rele, GPIO.LOW) # Enciende Relé
         print("Relé Encencido")
         time.sleep(5)  # Espera 5 segundos
 

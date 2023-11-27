@@ -41,7 +41,7 @@ def volt_to_power(freq):
     lectura_voltaje = canal.voltage
 
     # Convertir lectura a voltaje
-    valor_analogico = (abs(lectura_voltaje) * 1.001001) + 0.0005 # Pequeño ajuste de los datos
+    valor_analogico = (abs(lectura_voltaje) ) + 0.00001 # Pequeño ajuste de los datos * 1.001001
     valor_analogico = (999.0 * valor_analogico + valor_analogico) / 1000.0 # Pequeño ajuste de los datos
 
     # Conversión de V -> mW
@@ -54,18 +54,22 @@ def volt_to_power(freq):
     return valor_analogico, potenciadBm
 
 # Función para imprimir voltaje, potencia y frecuencia
-def volt_power_print(frecuencia):
+def volt_power_print(freq):
+
+    # freq_UD = freq * 4 / (10 ** 9)
 
     # Guarda en dos variables las lecturas de voltaje y potencia
-    valor_analogico, potenciadBm = volt_to_power(frecuencia)
-    
-    print(f"Frecuencia: {frecuencia} [GHz]")
+    valor_analogico, potenciadBm = volt_to_power(freq)
+
+    print("\n")
+    print(f"Frecuencia: {freq} [GHz]")
     print(f"Voltaje UD: {valor_analogico:.4f} [V]")  # Formatear el voltaje a 4 decimales, se puede ajustar
     print(f"Potencia: {potenciadBm:.4f} [dBm]")  # Formatear la potencia a 4 decimales, se puede ajustar
 
 # Función para realizar lecturas durante 10 segundos de voltaje y potencia
 # El período que se toma datos se puede ajustar en función del usuario 
 def volt_power_lecture(freq):
+    
     tiempo_inicial = time.time()
     tiempo_final = tiempo_inicial + 10  # Tomar datos durante 10 segundos
     print("Recopilando datos...")
@@ -134,16 +138,19 @@ def volt_power_show():
         plt.tight_layout()  # Ajustar automáticamente la disposición de los subplots
         #plt.show()
 
+
+
         # Guardar datos en archivo CSV. En este caso, para cada frecuencia se genera
         # un archivo .csv, de modo tal que se tendrán distintos archivos de respaldo
         with open(f"datos_{freq}GHz.csv", "w") as archivo_csv:
             archivo_csv.write("Hora,Voltaje (V),Potencia (dBm)\n")
             for i in range(len(horas)):
                 archivo_csv.write(f"{horas[i]},{voltaje[i]},{potencia[i]}\n")
+            print('Datos guardados en datos_freq.csv')
 
 # Ejemplo de uso
-if __name__ == "__main__":
-    frecuencia_ejemplo = 50.0  
-    volt_power_lecture(frecuencia_ejemplo)
-    volt_power_print(frecuencia_ejemplo)
-    volt_power_show()  # Mostrar y guardar los datos después de la lectura
+#if __name__ == "__main__":
+    # frecuencia_ejemplo = 50  
+    # volt_power_lecture(frecuencia_ejemplo)
+    # volt_power_print(frecuencia_ejemplo)
+    # volt_power_show()  # Mostrar y guardar los datos después de la lectura
