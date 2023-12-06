@@ -142,14 +142,14 @@ def send_status(device):
             print(f"B0: {'100 MHz Locked (Internal Ref)' if B0 == 1 else '100 MHz Unlocked (Internal Ref)'}")
 
             # Lectura del bit B1
-            print(f"B1: {'YIG PLL Locked (External Ref)' if B1 == 1 else 'YIG PLL Unlocked (External Ref)'}")
+            print(f"B1: {'YIG PLL Locked' if B1 == 1 else 'YIG PLL Unlocked'}")
 
             # B2 a B5 no se utilizan
 
             # Lectura del bit B6
             print(f"B6: {'Self Test Passed' if B6 == 1 else 'Self Test Failed'}")
             # Lectura del bit B7
-            print(f"B7: {'NOVO Locked' if B7 == 1 else 'NOVO Unlocked'}")
+            print(f"B7: {'NOVO Locked (External Ref)' if B7 == 1 else 'NOVO Unlocked (External Ref)'}")
 
             if response_str == '11000011':
                 #GPIO.output(led_pin, GPIO.HIGH)

@@ -34,9 +34,9 @@ void decodeBits(const char *bits) {
     }
     
     if (d1 == 0) {
-        printf("D1: YIG PLL Unlocked (External Ref)\n");
+        printf("D1: YIG PLL Unlocked\n");
     } else {
-        printf("D1: YIG PLL Locked (External Ref)\n");
+        printf("D1: YIG PLL Locked\n");
     }
     
     // D2 to D5 not used
@@ -48,9 +48,9 @@ void decodeBits(const char *bits) {
     }
     
     if (d7 == 0) {
-        printf("D7: NOVO Unlocked\n");
+        printf("D7: NOVO Unlocked (External Ref)\n");
     } else {
-        printf("D7: NOVO Locked\n");
+        printf("D7: NOVO Locked (External Ref)\n");
     }
 }
 

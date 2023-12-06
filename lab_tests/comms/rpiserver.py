@@ -42,9 +42,9 @@ def manejar_cliente(client_socket):
         frecuencia = float(data.decode())
 
         freq_UD = frecuencia * 4 / (10 ** 9) # Multiplicador x4 de la frecuencia y conversión a GHz
-        freq_synth = frecuencia / (10 ** 6) # Pasa freq recibida a GHz (xx 000 MHz = xx GHz)
+        freq_synth = frecuencia / (10 ** 6) # Pasa freq recibida a MHz (xx 000 MHz = xx GHz)
 
-        print(f"Frecuencia recibida: {frecuencia} [MHz]")
+        print(f"Frecuencia recibida: {frecuencia} [Hz]")
         print(f"Frecuencia Sintetizador: {freq_synth} [MHz]")
         print(f"Frecuencia en Medidor de Potencia: {freq_UD} [GHz]")
 
@@ -78,7 +78,7 @@ def manejar_comandos():
             # Imprime el valor de Frecuencia (X4), Voltaje leído por el UD y la Potencia
             if command == 'V':
                 print(" ------ Información Sintetizador ------ ")
-                print(f"Frecuencia Sintetizador: {freq_synth}")
+                print(f"Frecuencia Sintetizador: {freq_synth} [MHz]")
                 print(" --------------------------------------- ")
                 print("--- Información UD Broadband Detector ---")
                 volt_power_print(freq_UD) 
@@ -117,10 +117,10 @@ def manejar_comandos():
             # Comunicación con el sintetizador. Muestra los bits de estado del sintetizador
             # Bits de estado: B0 | B1 | B2 | B3 | B4 | B5 | B6 | B7 
             # B0 = 1 (0) -> 10 MHz (Un)Locked (Internal Ref)
-            # B1 = 1 (0) -> YIG PLL (Un)Locked (External Ref)
+            # B1 = 1 (0) -> YIG PLL (Un)Locked 
             # B2 a B5 no son utilizados
             # B6 = 1 (0) -> Self Test Passed (Failed)
-            # B7 = 1 (0) -> NOVO (Un)Locked
+            # B7 = 1 (0) -> NOVO (Un)Locked (External Ref)
             elif command == 'S': # Equivalente a enviar ?
                 # Ejecutar la función para enviar el comando de estado
                 device = open_device()
@@ -153,9 +153,11 @@ def iniciar_servidor(host, port):
     while True:
         try:
             client_sock, addr = server.accept()
+            print(" ------ Información del Servidor ------ ")
             print(f"Conexión entrante de {addr[0]}:{addr[1]}")
             client_thread = threading.Thread(target=manejar_cliente, args=(client_sock,))
             client_thread.start()
+            print(" --------------------------------------- ")
         except KeyboardInterrupt:
             break  # Salir del bucle si se presiona Ctrl+C
 

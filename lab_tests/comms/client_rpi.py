@@ -11,5 +11,6 @@ def enviar_frecuencia(host, port, freq):
 if __name__ == "__main__":
     host = '169.254.81.30'
     port = 8000
-    freq = 22 # Cambiar para enviar distintas frecuencias
+    freq = 12000000000 # Cambiar para enviar distintas frecuencias
+    print(f'Frecuencia enviada {freq} [Hz]')
     enviar_frecuencia(host, port, freq)
