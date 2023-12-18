@@ -1,0 +1,96 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <hidapi/hidapi.h>
+#include <string.h>
+#include <unistd.h>
+#include <pthread.h> // Include the pthread library
+
+#define VENDOR_ID 0x04d8   // Replace with your device's vendor ID
+#define PRODUCT_ID 0x003f  // Replace with your device's product ID
+
+void decodeBits(const char *bits) {
+    if (strlen(bits) != 8) {
+        printf("Input must be an 8-bit binary sequence\n");
+        return;
+    }
+    
+    int d0 = bits[0] - '0';
+    int d1 = bits[1] - '0';
+    int d6 = bits[6] - '0';
+    int d7 = bits[7] - '0';
+    
+    if (d0 == 0) {
+        printf("D0: 100 MHz Unlocked (Internal Ref)\n");
+    } else {
+        printf("D0: 100 MHz Locked (Internal Ref)\n");
+    }
+    
+    if (d1 == 0) {
+        printf("D1: YIG PLL Unlocked (External Ref)\n");
+    } else {
+        printf("D1: YIG PLL Locked (External Ref)\n");
+    }
+    
+    // D2 to D5 not used
+    
+    if (d6 == 0) {
+        printf("D6: Self Test Failed\n");
+    } else {
+        printf("D6: Self Test Passed\n");
+    }
+    
+    if (d7 == 0) {
+        printf("D7: NOVO Unlocked\n");
+    } else {
+        printf("D7: NOVO Locked\n");
+    }
+}
+
+void *temperature_monitor(void *arg) {
+    hid_device *device = (hid_device *)arg;
+
+    while (1) {
+        unsigned char temp_command[] = "T";
+        int result = hid_write(device, temp_command, sizeof(temp_command));
+        if (result == -1) {
+            printf("Error al enviar el comando de temperatura.\n");
+            break;
+        }
+
+        usleep(100000); // Introduce a delay of 100 milliseconds
+
+        unsigned char response[64];
+        int bytes_read = hid_read(device, response, sizeof(response));
+        if (bytes_read > 0) {
+            char response_data[64];
+            memset(response_data, 0, sizeof(response_data));
+            strncpy(response_data, (char *)response, bytes_read);
+
+            float temperature = atof(response_data);
+            printf("\n Temperature: %.2f°C\n", temperature);
+
+            if (temperature >= 1.0 && temperature <= 5.0) {
+                printf("Warning, low temperature\n");
+            } else if (temperature > 5.0 && temperature <= 15.0) {
+                printf("Device reaching low temperatures, please be careful\n");
+            } else if (temperature > 15.0 && temperature <= 50.0) {
+                printf("Unit in good health\n");
+            } else if (temperature > 50.0 && temperature <= 55.0) {
+                printf("Device reaching high temperatures, please be careful\n");
+            } else if (temperature > 55.0 && temperature < 59.0) {
+                printf("Warning, high temperature\n");
+            } else if (temperature >= 59.0 || temperature <= 0.9) {
+                printf("Temperature outside safe range. Stopping program.\n");
+                pthread_exit(NULL); // Exit the thread
+            }
+        } else {
+            printf("No se recibió ninguna respuesta del dispositivo para verificación de temperatura.\n");
+        }
+
+        sleep(30); // Sleep for 30 seconds before the next temperature check
+    }
+
+    return NULL;
+}
+
+
