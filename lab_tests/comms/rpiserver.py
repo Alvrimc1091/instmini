@@ -43,17 +43,16 @@ def manejar_cliente(client_socket):
 
         freq_UD = frecuencia * 4 / (10 ** 9) # Multiplicador x4 de la frecuencia y conversión a GHz
         freq_synth = frecuencia / (10 ** 6) # Pasa freq recibida a MHz (xx 000 MHz = xx GHz)
-
+        freq_synth = f"{freq_synth:.6f}".rstrip('0').rstrip('.')
+        
         print(f"Frecuencia recibida: {frecuencia} [Hz]")
         print(f"Frecuencia Sintetizador: {freq_synth} [MHz]")
         print(f"Frecuencia en Medidor de Potencia: {freq_UD} [GHz]")
 
         resultado = f"\n Frecuencia seteada en Sintetizador: {freq_synth} [MHz] \
                          \n Frecuencia en Medidor de Potencia {freq_UD} [GHz]"
-        client_socket.send(resultado.encode())
         
-        # Llamar a la función open_device para abrir el sintetizador
-        device = open_device()
+        client_socket.send(resultado.encode())
         
         if device:
             # Llamar a la función send_freq para configurar la frecuencia en el sintetizador
@@ -64,7 +63,7 @@ def manejar_cliente(client_socket):
                 # Llamar a la función send_status para obtener el estado del dispositivo
                 send_status(device)
             # Llamar a la función close_device para cerrar el sintetizador
-            close_device(device)
+            #close_device(device)
          
     client_socket.close()
 
@@ -76,7 +75,7 @@ def manejar_comandos():
             command = input("Ingrese un comando: ")
 
             # Imprime el valor de Frecuencia (X4), Voltaje leído por el UD y la Potencia
-            if command == 'V':
+            if command == 'V' or command == 'v':
                 print(" ------ Información Sintetizador ------ ")
                 print(f"Frecuencia Sintetizador: {freq_synth} [MHz]")
                 print(" --------------------------------------- ")
@@ -85,29 +84,44 @@ def manejar_comandos():
                 print(" --------------------------------------- ")
             
             # Muestra la lista de comandos disponibles
-            elif command == 'C':
-                print("'V' -> Muestra valores de Voltaje [V] y Potencia [dBm]\
+            elif command == 'C' or command == 'c':
+                print(" 'F' -> Envía el valor de Frecuencia al Sintetizador (Valor debe ser Fxxxxx.xxxxxx)\
+                    \n'V' -> Muestra valores de Voltaje [V] y Potencia [dBm]\
                     \n'P' -> Guarda los datos de V y P en un CSV además de graficarlos\
                     \n'T' -> Muestra la Temperatura actual del Sintetizador\
                     \n'S' -> Muestra los Bits de estado del Sintetizador\
                     \n'Q' -> Cerrar el Servidor")
 
+            # elif command.startswith(('f', 'F')) and command[1:].isdigit():
+            #     freq_synth = int(command[1:])
+            #     freq_UD = freq_synth * 4 / (10^3)
+            #     volt_power_print(freq_UD)
+
+            #     if device:
+            #         try:
+            #             send_freq(device, freq_synth)
+            #             print(f'Frecuencia seteada en {freq_synth} [MHz]')
+                    
+            #         except Exception as e:
+            #             print(f'Error al configurar la frecuencia: {e}')
+            #     else:
+            #         print('El dispositivo no está conectado. Verifique la conexión')
+
             # Guarda los datos (recopila los últimos 10 seg.) de Voltaje y Potencia en un CSV 
             # Genera dos gráficos: Tiempo vs Volt y Volt vs Pot
             
-            elif command == "P":
+            elif command == "P" or command == 'p':
                 volt_power_lecture(freq_UD)
                 volt_power_show()
 
             # Comunicación con el sintetizador. Muestra la temperatura actual del sintetizador
-            elif command == 'T':
-                device = open_device()
+            elif command == 'T' or command == 't':
+                #device = open_device()
                 if device:
                     try:
                 # Ejecutar la función para enviar el comando de temperatura
-                
                         send_temp(device)  
-                        close_device(device)
+                 #       close_device(device)
                     except Exception as e:
                         print(f"Error al obtener la temperatura: {e}")
                 else:
@@ -121,21 +135,20 @@ def manejar_comandos():
             # B2 a B5 no son utilizados
             # B6 = 1 (0) -> Self Test Passed (Failed)
             # B7 = 1 (0) -> NOVO (Un)Locked (External Ref)
-            elif command == 'S': # Equivalente a enviar ?
+            elif command == 'S' or command == 's': # Equivalente a enviar ?
                 # Ejecutar la función para enviar el comando de estado
-                device = open_device()
+                #device = open_device()
                 if device:
                     try:
-
                         send_status(device)  
-                        close_device(device)
+                #        close_device(device)
                     except Exception as e:
                         print(f"Error al obtener los bits de estado: {e}")
                 else:
                     print("El dispositivo no está conectado. Comando no disponible.")
 
             # Cierra el servidor y la recepción de comandos
-            elif command == 'Q':
+            elif command == 'Q' or command == 'q':
                 print("Finalizando Programa...")
                 time.sleep(2)
                 GPIO.output(led_pin, GPIO.HIGH) # Apagando Relé
@@ -153,7 +166,7 @@ def iniciar_servidor(host, port):
     while True:
         try:
             client_sock, addr = server.accept()
-            print(" ------ Información del Servidor ------ ")
+            print(" \n ------ Información del Servidor ------ ")
             print(f"Conexión entrante de {addr[0]}:{addr[1]}")
             client_thread = threading.Thread(target=manejar_cliente, args=(client_sock,))
             client_thread.start()
@@ -164,12 +177,11 @@ def iniciar_servidor(host, port):
 # Función para enviar constantemente los comandos de V, para mostrar freq, volt y pot
 # También muestra la temperatura y bits de estado del sintetizador
 def data_periodica(device):
-    device = open_device()
+    #device = open_device()
     while True:
         # Envía los comandos V, T y S
         volt_power_print(freq_UD)
         if device:
-
             try:
                 send_temp(device)
                 send_status(device)
@@ -181,7 +193,7 @@ def data_periodica(device):
         time.sleep(5)
 
 if __name__ == "__main__":
-    host = '169.254.81.30'  # Definir IP 
+    host = '192.168.2.123' #'169.254.81.30'  # Definir IP 
     port = 8000             # Definir el puerto de comunicación
     
     #GPIO.output(led_pin, GPIO.LOW) # Enciende Relé
@@ -193,7 +205,7 @@ if __name__ == "__main__":
     server_thread.start()
 
     # Abre el dispositivo una vez antes de iniciar los hilos
-    device = open_device()
+    #device = open_device()
 
     # Inicia el hilo para acciones periódicas
     # Siempre va a estar mandando los comandos cada cierto período

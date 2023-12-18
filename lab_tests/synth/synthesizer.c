@@ -1,9 +1,9 @@
 // RUN:
 // gcc -o synthesizer synthesizer.c -lhidapi-hidraw -lpthread
 // sudo ./synthesizer
-// sends the temperature with comments every 30secs
+// sends the temperature with comments every 29secs
 // if the temperature gets out if the range, the program stops
-// every 77 seconds, it also checks the status bits and stops if some of them are differnt from 0
+// every 31 seconds, it also checks the status bits and stops if some of them are differnt from 0
 // when exit command, the program show the final information
 
 #include <stdio.h>
@@ -95,7 +95,7 @@ void *temperature_monitor(void *arg) {
             printf("No se recibió ninguna respuesta del dispositivo para verificación de temperatura.\n");
         }
 
-        sleep(30); // Sleep for 30 seconds before the next temperature check
+        sleep(29); // Sleep for 29 seconds before the next temperature check
     }
 
     return NULL;
@@ -133,7 +133,7 @@ void *status_verification(void *arg) {
             printf("No se recibió ninguna respuesta del dispositivo para verificación de estado.\n");
         }
 
-        sleep(75); // Sleep for 75 seconds before the next verification
+        sleep(31); // Sleep for 31 seconds before the next verification
     }
 
     return NULL;

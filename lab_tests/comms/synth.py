@@ -43,8 +43,10 @@ def close_device(device):
 def send_freq(device, freq):
     command = f"f{freq}" # Comando de frecuencia debe comenzar con una fxxxxx.xxxxxx
     print(" ------ Información Sintetizador ------ ")
+    print(command)
+    print(f'Frecuencia del sintetizador fijada en: {freq} [MHz]')
 
-    if 4000 <= freq <= 16000: # Frecuencia debe estar entre 4 y 16 GHz
+    if 4000 <= int(freq) <= 16000: # Frecuencia debe estar entre 4 y 16 GHz
         device.write(list(command.encode()))
         print(f"Frecuencia enviada al sintetizador: {command}")
         time.sleep(1)

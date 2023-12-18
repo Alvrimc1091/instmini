@@ -22,8 +22,8 @@ canal = AnalogIn(ads, ADS.P0)  # Cambia ADS.P0 al número de canal que estés ut
 
 # Datos de frecuencia y sensitividad. 
 # Los datos provienen de la información del fabicante
-data_freq = np.array([40, 45, 50, 55, 60])
-data_sens = np.array([1993, 1902, 2256, 2076, 1876])
+data_freq = np.array([36, 40, 45, 50, 52.5, 55, 57.5, 60]) #np.array([40, 45, 50, 55, 60])
+data_sens = np.array([1117.47, 818.08, 655.59, 641.09, 574.65, 558.101, 616.68, 594.07]) #np.array([1993, 1902, 2256, 2076, 1876])
 
 # Crear el interpolador PCHIP para la sensitividad en función de la frecuencia
 # Se utiliza para las frecuencias que se encuentren entre medio de los valores
