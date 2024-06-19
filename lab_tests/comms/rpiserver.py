@@ -28,6 +28,7 @@ GPIO.setup(led_pin, GPIO.OUT)
 # -----------------------------------> manejar_cliente
 # Función manejar_cliente utilizada para manejar las conexiones entrantes de clientes
 # En la variable frecuencia, recibirá el valor de la frecuencia de interés que provenga desde el PIC
+# Desde el PIC, se envía: "b'freq 2206341800\r\n'" y se extrae únicamente el valor de frecuencia
 # Luego define freq_UD para guardar la variable que se utiliza en la medición de potencia
 # Mientras que freq_synth guarda la variable que se envía al sintetizador
 # Finalmente, cada vez que se recibe una nueva frecuencia, envía al sintetizador los comandos
