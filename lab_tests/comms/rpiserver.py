@@ -39,7 +39,7 @@ def manejar_cliente(client_socket):
     data = client_socket.recv(1024)
     if data:
 
-        frecuencia = float(data.decode())
+        frecuencia = float((data.decode()).split()[1])
 
         freq_UD = frecuencia * 4 / (10 ** 9) # Multiplicador x4 de la frecuencia y conversión a GHz
         freq_synth = frecuencia / (10 ** 6) # Pasa freq recibida a MHz (xx 000 MHz = xx GHz)
