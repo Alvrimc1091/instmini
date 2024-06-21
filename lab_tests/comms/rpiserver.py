@@ -194,8 +194,8 @@ def data_periodica(device):
         time.sleep(5)
 
 if __name__ == "__main__":
-    host = '192.168.2.123' #'169.254.81.30'  # Definir IP 
-    port = 8000             # Definir el puerto de comunicación
+    host = '192.168.7.7' #'169.254.81.30'  # Definir IP 
+    port = 5025 # Definir el puerto de comunicacion
     
     #GPIO.output(led_pin, GPIO.LOW) # Enciende Relé
     
