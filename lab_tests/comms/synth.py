@@ -46,7 +46,7 @@ def send_freq(device, freq):
     print(command)
     print(f'Frecuencia del sintetizador fijada en: {freq} [MHz]')
 
-    if 4000 <= freq <= 16000: # Frecuencia debe estar entre 4 y 16 GHz
+    if 4000 <= float(freq) <= 16000: # Frecuencia debe estar entre 4 y 16 GHz
         device.write(list(command.encode()))
         print(f"Frecuencia enviada al sintetizador: {command}")
         time.sleep(1)

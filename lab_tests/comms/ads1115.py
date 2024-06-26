@@ -58,11 +58,14 @@ def volt_power_print(freq):
 
     # freq_UD = freq * 4 / (10 ** 9)
 
+    freq_synth = freq/4
+
     # Guarda en dos variables las lecturas de voltaje y potencia
     valor_analogico, potenciadBm = volt_to_power(freq)
 
     print("\n")
-    print(f"Frecuencia: {freq} [GHz]")
+    print(f"Frecuencia salida LO: {freq} [GHz]")
+    print(f"Frecuencia sintetizador: {freq_synth} [GHz]")
     print(f"Voltaje UD: {valor_analogico:.4f} [V]")  # Formatear el voltaje a 4 decimales, se puede ajustar
     print(f"Potencia: {potenciadBm:.4f} [dBm]")  # Formatear la potencia a 4 decimales, se puede ajustar
 
